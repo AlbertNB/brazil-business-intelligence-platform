@@ -1,0 +1,15 @@
+project_name                   = "bbip"
+environment                    = "prod"
+aws_region                     = "us-east-2"
+
+databricks_host                = "https://dbc-xxxxxxxx-xxxx.cloud.databricks.com"
+databricks_token               = "replace-me"
+databricks_metastore_id        = "replace-me"
+databricks_uc_external_id      = "replace-me"
+databricks_aws_account_id      = "replace-me"
+databricks_uc_master_role_name = "replace-me"
+databricks_principal           = "user@example.com"
+
+catalog_name                   = "bbip_prod"
+storage_credential_name        = "bbip_prod_credential"
+external_location_prefix       = "bbip_prod"

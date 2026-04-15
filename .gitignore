@@ -91,6 +91,24 @@ htmlcov/
 *.crt
 
 # =========================
+# Terraform
+# =========================
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.tfstate.lock.info
+*.tfplan
+*.tfvars
+*.tfvars.json
+!.tfvars.example
+
+# =========================
 # MacOS Python
 # =========================
 .python-version
