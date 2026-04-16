@@ -1,0 +1,33 @@
+resources:
+  jobs:
+    IBGE_Ingestion_and_Transform:
+      name: IBGE Ingestion and Transform
+      tasks:
+        - task_key: bronze_ingestion
+          spark_python_task:
+            python_file: ${env.AUTOLOADER_PATH}
+            parameters:
+              - --source
+              - ibge
+              - --streams
+              - "*"
+              - --multiline
+              - "true"
+              - --landing_root
+              - ${env.LANDING_ROOT}
+              - --metadata_root
+              - ${env.METADATA_ROOT}
+              - --bronze_root
+              - ${env.BRONZE_ROOT}
+              - --catalog
+              - bbip_prod
+              - --target_schema
+              - bronze
+          environment_key: Default
+      queue:
+        enabled: true
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "5"
+      performance_target: PERFORMANCE_OPTIMIZED
