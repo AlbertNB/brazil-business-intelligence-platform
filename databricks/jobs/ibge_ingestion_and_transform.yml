@@ -1,6 +1,6 @@
 resources:
   jobs:
-    IBGE_Ingestion_and_Transform:
+    ibge_ingestion_and_transform:
       name: IBGE Ingestion and Transform
       tasks:
         - task_key: bronze_ingestion
