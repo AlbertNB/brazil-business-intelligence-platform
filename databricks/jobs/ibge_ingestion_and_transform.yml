@@ -5,7 +5,7 @@ resources:
       tasks:
         - task_key: bronze_ingestion
           spark_python_task:
-            python_file: ${env.AUTOLOADER_PATH}
+            python_file: ../ingestion/autoloader/bronze_ingestion.py
             parameters:
               - --source
               - ibge
@@ -14,11 +14,11 @@ resources:
               - --multiline
               - "true"
               - --landing_root
-              - ${env.LANDING_ROOT}
-              - --metadata_root
-              - ${env.METADATA_ROOT}
+              - ${var.LANDING_ROOT}
+              - --autoloader_root
+              - ${var.AUTOLOADER_ROOT}
               - --bronze_root
-              - ${env.BRONZE_ROOT}
+              - ${var.BRONZE_ROOT}
               - --catalog
               - bbip_prod
               - --target_schema

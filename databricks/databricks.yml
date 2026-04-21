@@ -1,0 +1,14 @@
+bundle:
+  name: brazil_business_intelligence_platform
+
+include:
+  - jobs/*.yml
+  - targets/*.yml
+
+variables:
+  LANDING_ROOT:
+    description: S3 landing root
+  AUTOLOADER_ROOT:
+    description: S3 Auto Loader root
+  BRONZE_ROOT:
+    description: S3 bronze root

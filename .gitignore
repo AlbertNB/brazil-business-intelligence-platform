@@ -21,6 +21,12 @@ ENV/
 !.env.example
 
 # =========================
+# Databricks sensitive targets
+# =========================
+databricks/targets/*.yml
+!databricks/targets/*.yml.example
+
+# =========================
 # Logs
 # =========================
 *.log

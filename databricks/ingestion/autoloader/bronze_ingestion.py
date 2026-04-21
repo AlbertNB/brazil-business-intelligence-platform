@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
 
     # Storage roots (required)
     p.add_argument("--landing_root", required=True, help="Landing root path (e.g. s3://bbip-landing-prod-<account>-<region>/).")
-    p.add_argument("--metadata_root", required=True, help="Metadata root for schema/checkpoints (e.g. s3://bbip-metadata-prod-<account>-<region>/autoloader).")
+    p.add_argument("--autoloader_root", required=True, help="Auto Loader root for schema/checkpoints (e.g. s3://bbip-metadata-prod-<account>-<region>/autoloader).")
     p.add_argument("--bronze_root", required=True, help="Bronze root path (e.g. s3://bbip-bronze-prod-<account>-<region>/).")
 
     # Unity Catalog
@@ -44,8 +44,8 @@ def build_paths(args: argparse.Namespace, stream: str) -> Dict[str, str]:
     table = f"{args.catalog}.{args.target_schema}.{table_name}"
 
     out = join_path(args.bronze_root, sql_safe(args.source), table_name) + "/"
-    sch = join_path(args.metadata_root, sql_safe(args.source), table_name, "schema") + "/"
-    ckpt = join_path(args.metadata_root, sql_safe(args.source), table_name, "checkpoint") + "/"
+    sch = join_path(args.autoloader_root, sql_safe(args.source), table_name, "schema") + "/"
+    ckpt = join_path(args.autoloader_root, sql_safe(args.source), table_name, "checkpoint") + "/"
 
     return {
         "src": src,
