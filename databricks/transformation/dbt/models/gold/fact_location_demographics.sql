@@ -109,14 +109,17 @@ final as (
             else null
         end as population_preferred_source,
         ay.area_km2,
-        cp.population_census / nullif(ay.area_km2, 0) as density_census,
-        ep.population_estimated / nullif(ay.area_km2, 0) as density_estimated,
-        (
-            case
-                when cp.population_census is not null then cp.population_census
-                else ep.population_estimated
-            end
-        ) / nullif(ay.area_km2, 0) as density_preferred,
+        round(cp.population_census / nullif(ay.area_km2, 0), 2) as density_census,
+        round(ep.population_estimated / nullif(ay.area_km2, 0), 2) as density_estimated,
+        round(
+            (
+                case
+                    when cp.population_census is not null then cp.population_census
+                    else ep.population_estimated
+                end
+            ) / nullif(ay.area_km2, 0),
+            2
+        ) as density_preferred,
         li._ingestion_ts
     from population_years py
     left join census_population cp
