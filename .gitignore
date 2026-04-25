@@ -21,6 +21,12 @@ ENV/
 !.env.example
 
 # =========================
+# Databricks sensitive targets
+# =========================
+databricks/targets/*.yml
+!databricks/targets/*.yml.example
+
+# =========================
 # Logs
 # =========================
 *.log
@@ -60,6 +66,8 @@ data/
 *.avro
 *.gz
 *.zip
+!databricks/transformation/dbt/seeds/**/*.csv
+!databricks/transformation/dbt/seeds/**/*.json
 
 # =========================
 # Temporary / cache
@@ -112,3 +120,12 @@ override.tf.json
 # MacOS Python
 # =========================
 .python-version
+
+# =========================
+# dbt
+# =========================
+databricks/transformation/dbt/profiles.yml
+databricks/transformation/dbt/.user.yml
+databricks/transformation/dbt/logs*
+databricks/transformation/dbt/target*
+databricks/transformation/dbt/dbt_packages*

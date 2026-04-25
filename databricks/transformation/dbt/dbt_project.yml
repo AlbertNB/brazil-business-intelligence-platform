@@ -1,0 +1,44 @@
+name: "datalake"
+version: "1.0.0"
+config-version: 2
+
+profile: "datalake"
+
+flags:
+  use_materialization_v2: true
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  datalake:
+    +materialized: incremental
+    +incremental_strategy: merge
+    +on_schema_change: sync_all_columns
+
+    bronze:
+      +schema: bronze
+      +tags: ["bronze"]
+
+    silver:
+      +schema: silver
+      +tags: ["silver"]
+      +persist_docs:
+        relation: true
+        columns: true
+      ibge:
+        +tags: ['ibge']
+
+    gold:
+      +schema: gold
+      +tags: ["gold"]
+      +persist_docs:
+        relation: true
+        columns: true
+
+seeds:
+  datalake:
+    +schema: silver
+    ibge:
+      +schema: silver
+      +tags: ["ibge"]

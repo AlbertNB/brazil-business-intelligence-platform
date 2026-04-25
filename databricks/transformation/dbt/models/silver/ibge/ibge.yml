@@ -1,0 +1,113 @@
+version: 2
+
+models:
+  - name: ibge__states
+    description: "Curated Brazilian states (UF) dataset from IBGE (silver layer). Deduplicated by natural key."
+    columns:
+      - name: state_id
+        description: "IBGE state (UF) identifier (natural key)."
+        tests: [not_null, unique]
+      - name: state_name
+        description: "State name."
+        tests: [not_null]
+      - name: state_abbreviation
+        description: "State abbreviation (UF sigla)."
+        tests: [not_null]
+      - name: region_id
+        description: "IBGE macro region identifier."
+        tests: [not_null]
+      - name: region_name
+        description: "IBGE macro region name."
+        tests: [not_null]
+      - name: region_abbreviation
+        description: "IBGE macro region abbreviation."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
+
+  - name: ibge__municipalities
+    description: "Curated Brazilian municipalities dataset from IBGE (silver layer). Deduplicated by natural key, enriched with state, region, meso/microregion, immediate and intermediate region attributes."
+    columns:
+      - name: municipality_id
+        description: "IBGE municipality identifier (natural key)."
+        tests: [not_null, unique]
+      - name: municipality_name
+        description: "Municipality name."
+        tests: [not_null]
+      - name: state_id
+        description: "IBGE state (UF) identifier."
+        tests: [not_null]
+      - name: state_name
+        description: "State name."
+        tests: [not_null]
+      - name: state_abbreviation
+        description: "State abbreviation (UF sigla)."
+        tests: [not_null]
+      - name: region_id
+        description: "IBGE macro region identifier."
+        tests: [not_null]
+      - name: region_name
+        description: "IBGE macro region name."
+        tests: [not_null]
+      - name: region_abbreviation
+        description: "IBGE macro region abbreviation."
+        tests: [not_null]
+      - name: mesoregion_id
+        description: "IBGE mesoregion identifier."
+        tests: [not_null]
+      - name: mesoregion_name
+        description: "IBGE mesoregion name."
+        tests: [not_null]
+      - name: microregion_id
+        description: "IBGE microregion identifier."
+        tests: [not_null]
+      - name: microregion_name
+        description: "IBGE microregion name."
+        tests: [not_null]
+      - name: immediate_region_id
+        description: "IBGE immediate region (região imediata) identifier."
+        tests: [not_null]
+      - name: immediate_region_name
+        description: "IBGE immediate region name."
+        tests: [not_null]
+      - name: intermediate_region_id
+        description: "IBGE intermediate region (região intermediária) identifier."
+        tests: [not_null]
+      - name: intermediate_region_name
+        description: "IBGE intermediate region name."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
+
+  - name: ibge__indicators_by_location_year
+    description: "Flattened and deduplicated IBGE indicator results by location and year (silver layer). One row per location + indicator + reference year, keeping the latest extraction."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [location_id, indicator_id, reference_year]
+    columns:
+      - name: location_id
+        description: "IBGE location identifier (2-digit state code or 7-digit municipality code)."
+        tests: [not_null]
+      - name: reference_year
+        description: "Reference year of the indicator value."
+        tests: [not_null]
+      - name: indicator_id
+        description: "IBGE indicator identifier."
+        tests: [not_null]
+      - name: metric_value
+        description: "Numeric indicator value."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _source_file
+        description: "Source file path from Auto Loader metadata."
+        tests: [not_null]

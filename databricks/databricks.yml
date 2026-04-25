@@ -1,0 +1,18 @@
+bundle:
+  name: brazil_business_intelligence_platform
+
+include:
+  - jobs/*.yml
+  - targets/*.yml
+
+variables:
+  LANDING_ROOT:
+    description: S3 landing root
+  AUTOLOADER_ROOT:
+    description: S3 Auto Loader root
+  BRONZE_ROOT:
+    description: S3 bronze root
+  DBT_WAREHOUSE_ID:
+    description: Databricks SQL Warehouse ID used by dbt tasks
+  DBT_CATALOG:
+    description: Unity Catalog catalog used by ingestion and dbt tasks

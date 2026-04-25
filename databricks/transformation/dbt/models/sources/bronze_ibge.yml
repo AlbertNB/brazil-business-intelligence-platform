@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    description: >
+      Raw data.
+
+    tables:
+      - name: ibge__estados
+        description: >
+          Raw dataset of Brazilian states (Unidades da Federação - UF).
+          Contains official IBGE state identifiers, names, abbreviations,
+          and their associated regions.
+          Each record represents one federative unit of Brazil.
+
+      - name: ibge__municipios
+        description: >
+          Raw dataset of Brazilian municipalities.
+          Contains official IBGE municipality identifiers, names, and links to
+          higher-level geographic divisions such as states, immediate regions,
+          and intermediate regions.
+          This is the lowest-level administrative division maintained by IBGE
+          and serves as the foundation for most demographic and socioeconomic analyses.
+
+      - name: ibge__resultados
+        description: >
+          Raw dataset of IBGE indicator results by locality.
+          Contains values for a set of indicators broken down by geographic unit
+          (e.g. municipality, state), as returned by the IBGE SIDRA/Agregados API.
+          Each record represents a single indicator result for a given location and reference period.

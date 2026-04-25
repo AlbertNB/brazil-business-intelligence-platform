@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: dim_location
+    description: "SCD1 location dimension for Brazilian IBGE geographies, unifying states and municipalities under a single natural location key."
+    columns:
+      - name: dim_location_id
+        description: "Deterministic surrogate key generated from location_nk."
+        tests: [not_null, unique]
+
+      - name: location_nk
+        description: "Natural location key (state_id for states, municipality_id for municipalities), stored as a string."
+        tests: [not_null, unique]
+
+      - name: location_type
+        description: "Location type in the model (state or city)."
+        tests: [not_null]
+
+      - name: location_name
+        description: "Human-readable location name."
+        tests: [not_null]

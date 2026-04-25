@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: fact_location_demographics
+    description: "Gold fact table for population, territorial area, and demographic density by location and year."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [dim_location_id, year]
+    columns:
+      - name: dim_location_id
+        description: "Surrogate key of the related location dimension (dim_location)."
+        tests: [not_null]
+
+      - name: location_id
+        description: "Natural IBGE location identifier as string (state_id or municipality_id), kept for traceability."
+        tests: [not_null]
+
+      - name: year
+        description: "Reference year of the metric."
+        tests: [not_null]
+
+      - name: population_census
+        description: "Population from census indicator (96385)."
+
+      - name: population_estimated
+        description: "Population from estimate indicator (29171)."
+
+      - name: population_preferred
+        description: "Preferred population value: census first, estimated as fallback."
+
+      - name: population_preferred_source
+        description: "Source used for preferred population (census or estimate)."
+
+      - name: area_km2
+        description: "Territorial area in square kilometers (indicators 29167 and 48980)."
+
+      - name: density_census
+        description: "Census density = population_census / area_km2."
+
+      - name: density_estimated
+        description: "Estimated density = population_estimated / area_km2."
+
+      - name: density_preferred
+        description: "Preferred density = population_preferred / area_km2."
