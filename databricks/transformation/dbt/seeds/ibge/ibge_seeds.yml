@@ -1,0 +1,17 @@
+version: 2
+
+seeds:
+  - name: ibge__indicators
+    description: "Lookup seed for IBGE indicators used in resultados extraction."
+    columns:
+      - name: indicator_id
+        description: "IBGE indicator identifier."
+        tests:
+          - not_null
+          - unique
+      - name: indicator_name
+        description: "Human-readable indicator name."
+      - name: metric_unit
+        description: "Unit of measure for the indicator."
+      - name: source_level
+        description: "How the indicator value is classified (census, estimate, territorial_extent)."

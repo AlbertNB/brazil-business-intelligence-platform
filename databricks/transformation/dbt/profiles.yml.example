@@ -1,0 +1,11 @@
+datalake:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      host: <DATABRICKS_HOST>
+      http_path: <DATABRICKS_SQL_WAREHOUSE_HTTP_PATH>
+      token: <DATABRICKS_SQL_WAREHOUSE_TOKEN>
+      threads: 4
+      catalog: <DATABRICKS_CATALOG>
+      schema: default     # will be overwriten in dbt_project.yml

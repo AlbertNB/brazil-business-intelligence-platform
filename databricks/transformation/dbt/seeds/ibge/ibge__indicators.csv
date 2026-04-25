@@ -1,0 +1,5 @@
+indicator_id,indicator_name,metric_unit,source_level
+96385,Population Census,people,census
+29171,Estimated Population,people,estimate
+29167,Territorial Extent,km2,territorial_extent_municipalities
+48980,Territorial Extent,km2,territorial_extent_states
