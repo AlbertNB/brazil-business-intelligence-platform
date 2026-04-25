@@ -4,6 +4,9 @@ config-version: 2
 
 profile: "datalake"
 
+flags:
+  use_materialization_v2: true
+
 model-paths: ["models"]
 macro-paths: ["macros"]
 
@@ -38,3 +41,4 @@ seeds:
     +schema: silver
     ibge:
       +schema: silver
+      +tags: ["ibge"]
