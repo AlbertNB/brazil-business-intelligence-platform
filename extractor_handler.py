@@ -5,6 +5,7 @@ import sys
 from dotenv import load_dotenv
 
 from extraction.ibge.extractor import IbgeExtractor
+from extraction.rfb.extractor import RfbCnpjExtractor
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,11 @@ def main() -> None:
         extractor = IbgeExtractor(
             s3_bucket=os.getenv("S3_BUCKET"),
             s3_base_prefix="ibge",
+        )
+    elif source == "rfb":
+        extractor = RfbCnpjExtractor(
+            s3_bucket=os.getenv("S3_BUCKET"),
+            s3_base_prefix="rfb/cnpjs",
         )
     else:
         raise ValueError(f"Unknown source: {source}")
