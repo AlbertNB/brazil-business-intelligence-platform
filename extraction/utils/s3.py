@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import IO, Union
+from typing import IO, List, Union
 
 import boto3
 from botocore.exceptions import ClientError
@@ -48,3 +48,16 @@ class S3Writer:
         except ClientError as exc:
             logger.exception("Failed to write file to S3: %s", s3_uri)
             raise RuntimeError(f"Failed to write file to S3: {s3_uri}") from exc
+
+    def list_keys(self, bucket: str, prefix: str) -> List[str]:
+        """List all object keys for a bucket/prefix pair."""
+        keys: List[str] = []
+        paginator = self.client.get_paginator("list_objects_v2")
+
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix.strip("/")):
+            for obj in page.get("Contents", []):
+                key = obj.get("Key")
+                if key:
+                    keys.append(key)
+
+        return keys

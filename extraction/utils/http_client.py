@@ -1,6 +1,7 @@
 import logging
 import time
-from typing import Any, Dict, Optional, Set
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional, Set
 
 import requests
 
@@ -24,9 +25,19 @@ class HttpClient:
         self.user_agent = user_agent
         self.acceptable_status_codes = acceptable_status_codes or {200}
 
-        self.session = requests.Session()
+        self.session = self._build_session()
+
+    def _build_session(self) -> requests.Session:
+        session = requests.Session()
         if self.user_agent:
-            self.session.headers.update({"User-Agent": self.user_agent})
+            session.headers.update({"User-Agent": self.user_agent})
+        return session
+
+    def _reset_session(self) -> None:
+        try:
+            self.session.close()
+        finally:
+            self.session = self._build_session()
 
     def request(
         self,
@@ -58,7 +69,89 @@ class HttpClient:
                 return response
 
             except requests.RequestException as exc:
+                logger.warning(
+                    "HTTP request failed (attempt %s/%s) for %s %s: %s",
+                    attempt,
+                    self.max_retries,
+                    method.upper(),
+                    url,
+                    exc,
+                )
+
+                if isinstance(exc, requests.exceptions.SSLError):
+                    # Force a fresh TLS connection when pooled socket becomes invalid.
+                    self._reset_session()
+
                 if attempt == self.max_retries:
                     raise RuntimeError(f"Request failed for URL: {url}") from exc
+
+                time.sleep(self.backoff_sec)
+
+    def download_to_file(
+        self,
+        url: str,
+        target_path: Path,
+        chunk_size: int,
+        connect_timeout_sec: int = 30,
+        expected_status_codes: Optional[Set[int]] = None,
+        progress_callback: Optional[Callable[[int, Optional[int]], None]] = None,
+    ) -> int:
+        """Download a URL to a local file with retries and optional progress callback.
+
+        The progress callback receives `(downloaded_bytes, expected_total_bytes)` where
+        total may be `None` when the server does not provide Content-Length.
+        """
+        accepted_status_codes = expected_status_codes or {200}
+
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                downloaded = 0
+
+                with self.session.get(
+                    url,
+                    stream=True,
+                    headers={"Connection": "close"},
+                    timeout=(connect_timeout_sec, self.timeout_sec),
+                ) as response:
+                    if response.status_code not in accepted_status_codes:
+                        raise requests.HTTPError(
+                            f"Unexpected HTTP status {response.status_code}",
+                            response=response,
+                        )
+
+                    expected_size: Optional[int] = None
+                    content_length_header = response.headers.get("Content-Length")
+                    if content_length_header and content_length_header.isdigit():
+                        expected_size = int(content_length_header)
+
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+                    with open(target_path, "wb") as output_file:
+                        for chunk in response.iter_content(chunk_size=chunk_size):
+                            if not chunk:
+                                continue
+
+                            output_file.write(chunk)
+                            downloaded += len(chunk)
+
+                            if progress_callback:
+                                progress_callback(downloaded, expected_size)
+
+                return downloaded
+
+            except requests.RequestException as exc:
+                logger.warning(
+                    "Download failed (attempt %s/%s) for %s: %s",
+                    attempt,
+                    self.max_retries,
+                    url,
+                    exc,
+                )
+
+                if isinstance(exc, requests.exceptions.SSLError):
+                    # Force a fresh TLS connection when pooled socket becomes invalid.
+                    self._reset_session()
+
+                if attempt == self.max_retries:
+                    raise RuntimeError(f"Download failed for URL: {url}") from exc
 
                 time.sleep(self.backoff_sec)
