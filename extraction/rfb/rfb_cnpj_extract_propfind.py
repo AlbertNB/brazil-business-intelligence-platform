@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import shutil
 import tempfile
@@ -24,16 +25,12 @@ logger = logging.getLogger(__name__)
 class DownloadTask:
     zip_name: str
     zip_url: str
-    task_number: int = 0
-    total_tasks: int = 0
 
 
 @dataclass
 class PrepareTask:
     zip_name: str
     local_zip_path: Path
-    task_number: int = 0
-    total_tasks: int = 0
 
 
 @dataclass
@@ -41,12 +38,9 @@ class UploadTask:
     stream_name: str
     child_filename: str
     local_gz_path: Path
-    zip_name: str
-    task_number: int = 0
-    total_tasks: int = 0
 
 
-class RfbCnpjExtractor:
+class RfbCnpjPropfindExtractor:
     """CNPJ extractor for Receita Federal using PROPFIND listing and a concurrent pipeline."""
 
     BASE_URL = "https://arquivos.receitafederal.gov.br/public.php/dav/files/YggdBLfdninEJX9/"
@@ -54,19 +48,9 @@ class RfbCnpjExtractor:
     DEFAULT_STREAM = "cnpjs"
     DEFAULT_TEMP_DIR = "/tmp/rfb_cnpjs"
     DOWNLOAD_CHUNK_SIZE = 8 * 1024 * 1024
-    DOWNLOAD_PROGRESS_MIN_SIZE_BYTES = 100 * 1024 * 1024
 
-    HTTP_TIMEOUT_SEC = 1800
-    HTTP_MAX_RETRIES = 3
-    HTTP_BACKOFF_SEC = 60.0
-    HTTP_USER_AGENT = (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/122.0.0.0 Safari/537.36"
-    )
-
-    DOWNLOAD_WORKERS = 3
-    PREPARE_WORKERS = 3
+    DOWNLOAD_WORKERS = 4
+    PREPARE_WORKERS = 2
     UPLOAD_WORKERS = 4
 
     def __init__(
@@ -83,14 +67,21 @@ class RfbCnpjExtractor:
 
         self.s3_bucket = s3_bucket
         self.s3_base_prefix = s3_base_prefix
-        self.temp_dir = self.DEFAULT_TEMP_DIR
+        self.temp_dir = os.getenv("RFB_TEMP_DIR", self.DEFAULT_TEMP_DIR)
 
         self.http = HttpClient(
-            timeout_sec=self.HTTP_TIMEOUT_SEC,
-            max_retries=self.HTTP_MAX_RETRIES,
-            backoff_sec=self.HTTP_BACKOFF_SEC,
+            timeout_sec=int(os.getenv("RFB_HTTP_TIMEOUT_SEC", "1800")),
+            max_retries=int(os.getenv("RFB_HTTP_MAX_RETRIES", "3")),
+            backoff_sec=float(os.getenv("RFB_HTTP_BACKOFF_SEC", "5")),
             acceptable_status_codes={200, 207},
-            user_agent=self.HTTP_USER_AGENT,
+            user_agent=os.getenv(
+                "RFB_HTTP_USER_AGENT",
+                (
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/122.0.0.0 Safari/537.36"
+                ),
+            ),
         )
         self.s3 = S3Handler()
 
@@ -149,13 +140,8 @@ class RfbCnpjExtractor:
         if href.startswith("http://") or href.startswith("https://"):
             return href
 
-        if href.startswith("/"):
-            parsed_base = urlparse(base_url)
-            base_origin = f"{parsed_base.scheme}://{parsed_base.netloc}"
-            return urljoin(base_origin, href)
-
         normalized_base = base_url if base_url.endswith("/") else f"{base_url}/"
-        return urljoin(normalized_base, href)
+        return urljoin(normalized_base, href.lstrip("/"))
 
     def _find_latest_competence(self) -> Tuple[str, str]:
         logger.info("Listing competencies with PROPFIND: %s", self.BASE_URL)
@@ -237,89 +223,11 @@ class RfbCnpjExtractor:
 
         return "others"
 
-    @staticmethod
-    def _normalize_index(value: str) -> str:
-        return str(int(value))
-
-    @classmethod
-    def _zip_index_from_zip_name(cls, zip_name: str) -> Optional[str]:
-        match = re.search(r"(\d+)(?=\.zip$)", zip_name, flags=re.IGNORECASE)
-        if not match:
-            return None
-        return cls._normalize_index(match.group(1))
-
-    @classmethod
-    def _zip_index_from_gz_filename(cls, filename: str) -> Optional[str]:
-        match = re.search(r"Y(\d+)", filename, flags=re.IGNORECASE)
-        if not match:
-            return None
-        return cls._normalize_index(match.group(1))
-
-    def _list_existing_indexes_and_streams(self, reference_month: str) -> Tuple[set[str], set[str]]:
-        marker = f"reference_month={reference_month}/"
-        existing_indexes: set[str] = set()
-        existing_streams: set[str] = set()
-
-        all_keys = self.s3.list_keys(
-            bucket=self.s3_bucket,
-            prefix=s3_join(self.s3_base_prefix),
-        )
-
-        for key in all_keys:
-            if marker not in key:
-                continue
-
-            key_parts = key.split("/")
-            base_prefix_parts = [part for part in self.s3_base_prefix.split("/") if part]
-            if len(key_parts) > len(base_prefix_parts):
-                existing_streams.add(key_parts[len(base_prefix_parts)])
-
-            index = self._zip_index_from_gz_filename(Path(key).name)
-            if index is not None:
-                existing_indexes.add(index)
-
-        return existing_indexes, existing_streams
-
-    def _filter_pending_download_tasks(
-        self,
-        reference_month: str,
-        download_tasks: List[DownloadTask],
-    ) -> Tuple[List[DownloadTask], List[str]]:
-        existing_indexes, existing_streams = self._list_existing_indexes_and_streams(reference_month)
-        pending_tasks: List[DownloadTask] = []
-        skipped_zip_names: List[str] = []
-
-        for task in download_tasks:
-            zip_index = self._zip_index_from_zip_name(task.zip_name)
-            if zip_index and zip_index in existing_indexes:
-                skipped_zip_names.append(task.zip_name)
-                continue
-
-            if zip_index is None and self._resolve_stream_name(task.zip_name) in existing_streams:
-                skipped_zip_names.append(task.zip_name)
-                continue
-
-            pending_tasks.append(task)
-
-        total_pending = len(pending_tasks)
-        numbered_pending: List[DownloadTask] = []
-        for idx, task in enumerate(pending_tasks, start=1):
-            numbered_pending.append(
-                DownloadTask(
-                    zip_name=task.zip_name,
-                    zip_url=task.zip_url,
-                    task_number=idx,
-                    total_tasks=total_pending,
-                )
-            )
-
-        return numbered_pending, skipped_zip_names
-
     def _download_zip(self, task: DownloadTask, download_dir: Path) -> Path:
         local_zip_path = download_dir / task.zip_name
         local_zip_path.parent.mkdir(parents=True, exist_ok=True)
 
-        logger.info("[download] start: %s/%s %s", task.task_number, task.total_tasks, task.zip_name)
+        logger.info("[download] start: %s", task.zip_name)
 
         next_progress_pct = 20
 
@@ -329,25 +237,12 @@ class RfbCnpjExtractor:
             if expected_total is None or expected_total <= 0:
                 return
 
-            if expected_total < self.DOWNLOAD_PROGRESS_MIN_SIZE_BYTES:
-                return
-
             progress_pct = int((downloaded * 100) / expected_total)
             while progress_pct >= next_progress_pct and next_progress_pct <= 100:
-                downloaded_mb = downloaded / (1024 * 1024)
-                expected_total_mb = expected_total / (1024 * 1024)
-                logger.info(
-                    "[download] progress: %s/%s %s %s%% (%.0f MB/%.0f MB)",
-                    task.task_number,
-                    task.total_tasks,
-                    task.zip_name,
-                    next_progress_pct,
-                    downloaded_mb,
-                    expected_total_mb,
-                )
+                logger.info("[download] progress: %s %s%%", task.zip_name, next_progress_pct)
                 next_progress_pct += 20
 
-        downloaded_bytes = self.http.download_to_file(
+        self.http.download_to_file(
             url=task.zip_url,
             target_path=local_zip_path,
             chunk_size=self.DOWNLOAD_CHUNK_SIZE,
@@ -359,14 +254,7 @@ class RfbCnpjExtractor:
         if not local_zip_path.exists() or local_zip_path.stat().st_size <= 0:
             raise RuntimeError(f"Downloaded file is missing or empty: {local_zip_path}")
 
-        downloaded_mb = downloaded_bytes / (1024 * 1024)
-        logger.info(
-            "[download] end: %s/%s %s (%.2f MB)",
-            task.task_number,
-            task.total_tasks,
-            task.zip_name,
-            downloaded_mb,
-        )
+        logger.info("[download] end: %s", task.zip_name)
         return local_zip_path
 
     def _prepare_zip(
@@ -376,7 +264,7 @@ class RfbCnpjExtractor:
         failures: List[Dict[str, str]],
         failures_lock: threading.Lock,
     ) -> List[UploadTask]:
-        logger.info("[prepare] start: %s/%s %s", task.task_number, task.total_tasks, task.zip_name)
+        logger.info("[prepare] start: %s", task.zip_name)
 
         if not task.local_zip_path.exists() or task.local_zip_path.stat().st_size <= 0:
             raise RuntimeError(f"Input zip does not exist or is empty: {task.local_zip_path}")
@@ -398,9 +286,6 @@ class RfbCnpjExtractor:
                         stream_name=stream_name,
                         child_filename=child_filename,
                         local_gz_path=gz_path,
-                        zip_name=task.zip_name,
-                        task_number=task.task_number,
-                        total_tasks=task.total_tasks,
                     )
                 )
             except Exception as exc:
@@ -418,7 +303,7 @@ class RfbCnpjExtractor:
                         }
                     )
 
-        logger.info("[prepare] end: %s/%s %s", task.task_number, task.total_tasks, task.zip_name)
+        logger.info("[prepare] end: %s", task.zip_name)
         return upload_tasks
 
     def _upload_gz(self, task: UploadTask, reference_month: str) -> str:
@@ -429,13 +314,7 @@ class RfbCnpjExtractor:
             task.local_gz_path.name,
         )
 
-        logger.info(
-            "[upload] start: %s/%s %s -> %s",
-            task.task_number,
-            task.total_tasks,
-            task.zip_name,
-            task.local_gz_path.name,
-        )
+        logger.info("[upload] start: %s", task.local_gz_path.name)
 
         with open(task.local_gz_path, "rb") as fobj:
             self.s3.client.put_object(
@@ -452,13 +331,7 @@ class RfbCnpjExtractor:
         if parent_dir.exists() and not any(parent_dir.iterdir()):
             parent_dir.rmdir()
 
-        logger.info(
-            "[upload] end: %s/%s %s -> %s",
-            task.task_number,
-            task.total_tasks,
-            task.zip_name,
-            task.local_gz_path.name,
-        )
+        logger.info("[upload] end: %s", task.local_gz_path.name)
         return f"s3://{self.s3_bucket}/{target_key}"
 
     @staticmethod
@@ -511,14 +384,7 @@ class RfbCnpjExtractor:
     ) -> None:
         def process_task(task: DownloadTask) -> None:
             local_zip_path = self._download_zip(task, download_dir)
-            prepare_queue.put(
-                PrepareTask(
-                    zip_name=task.zip_name,
-                    local_zip_path=local_zip_path,
-                    task_number=task.task_number,
-                    total_tasks=task.total_tasks,
-                )
-            )
+            prepare_queue.put(PrepareTask(zip_name=task.zip_name, local_zip_path=local_zip_path))
 
         def on_error(task: DownloadTask, exc: Exception) -> None:
             logger.exception("[download] failed: %s", task.zip_name)
@@ -599,22 +465,6 @@ class RfbCnpjExtractor:
 
         reference_month, competence_url = self._find_latest_competence()
         download_tasks = self._list_competence_zip_files(competence_url)
-        download_tasks, skipped_zip_names = self._filter_pending_download_tasks(
-            reference_month=reference_month,
-            download_tasks=download_tasks,
-        )
-
-        if skipped_zip_names:
-            logger.info("Skipping %s zip files already found in bucket", len(skipped_zip_names))
-            for zip_name in sorted(skipped_zip_names):
-                logger.info("[skip] %s", zip_name)
-
-        if download_tasks:
-            logger.info("Processing %s zip files:", len(download_tasks))
-            for task in download_tasks:
-                logger.info("[plan] %s/%s %s", task.task_number, task.total_tasks, task.zip_name)
-        else:
-            logger.info("No pending zip files to process for reference month %s", reference_month)
 
         temp_root = Path(self.temp_dir)
         temp_root.mkdir(parents=True, exist_ok=True)
@@ -686,9 +536,7 @@ class RfbCnpjExtractor:
                 "reference_month": reference_month,
                 "competence_url": competence_url,
                 "extraction_ts": extraction_ts,
-                "zip_files_found": len(download_tasks) + len(skipped_zip_names),
-                "zip_files_skipped": len(skipped_zip_names),
-                "zip_files_pending": len(download_tasks),
+                "zip_files_found": len(download_tasks),
                 "streams": sorted(uploaded_by_stream.keys()),
                 "files_uploaded": files_uploaded,
                 "uploaded_files_by_stream": uploaded_by_stream,
@@ -696,3 +544,25 @@ class RfbCnpjExtractor:
             }
         finally:
             shutil.rmtree(runtime_dir, ignore_errors=True)
+
+
+def main() -> None:
+    load_dotenv("landing.env")
+
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    )
+
+    extractor = RfbCnpjPropfindExtractor(
+        s3_bucket=os.getenv("S3_BUCKET"),
+        s3_base_prefix="rfb/cnpjs",
+    )
+
+    result = extractor.run()
+    print("Saved:", result)
+
+
+if __name__ == "__main__":
+    main()

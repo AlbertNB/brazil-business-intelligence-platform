@@ -5,12 +5,12 @@ from typing import IO, List, Union
 import boto3
 from botocore.exceptions import ClientError
 
-from extraction.utils.helpers import parse_s3_uri
+from utils.helpers import parse_s3_uri
 
 logger = logging.getLogger(__name__)
 
 
-class S3Writer:
+class S3Handler:
     """Utility class for writing text content to Amazon S3."""
 
     def __init__(self) -> None:
