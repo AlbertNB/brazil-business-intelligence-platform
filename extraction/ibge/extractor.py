@@ -5,10 +5,10 @@ from typing import Any, Dict, Iterable, List, Optional
 
 from dotenv import load_dotenv
 
-from extraction.utils.http_client import HttpClient
-from extraction.utils.json_batch_buffer import JsonBatchBuffer
-from extraction.utils.helpers import s3_join, utc_now_iso
-from extraction.utils.s3 import S3Writer
+from utils.http_client import HttpClient
+from utils.json_batch_buffer import JsonBatchBuffer
+from utils.helpers import s3_join, utc_now_iso
+from utils.s3 import S3Handler
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +81,7 @@ class IbgeExtractor:
             acceptable_status_codes={200},
             backoff_sec=2.0,
         )
-        self.s3 = S3Writer()
+        self.s3 = S3Handler()
 
         self.stream_handler = {
             "estados": lambda extraction_ts: self.extract_location(
@@ -190,7 +190,7 @@ class IbgeExtractor:
         extraction_ts = extraction_ts or utc_now_iso()
 
         buffer = JsonBatchBuffer(
-            s3_writer=self.s3,
+            s3_handler=self.s3,
             s3_bucket=self.s3_bucket,
             s3_base_prefix=self.s3_base_prefix,
             stream_name="resultados",

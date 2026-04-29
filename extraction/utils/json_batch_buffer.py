@@ -2,8 +2,8 @@ import json
 import logging
 from typing import Any, Callable, Dict, List
 
-from extraction.utils.helpers import s3_join
-from extraction.utils.s3 import S3Writer
+from utils.helpers import s3_join
+from utils.s3 import S3Handler
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class JsonBatchBuffer:
 
     def __init__(
         self,
-        s3_writer: S3Writer,
+        s3_handler: S3Handler,
         s3_bucket: str,
         s3_base_prefix: str,
         stream_name: str,
@@ -21,7 +21,7 @@ class JsonBatchBuffer:
         flush_threshold_bytes: int = 10 * 1024 * 1024,
         file_name_builder: Callable[[str, str, int], str] | None = None,
     ) -> None:
-        self.s3_writer = s3_writer
+        self.s3_handler = s3_handler
         self.s3_bucket = s3_bucket
         self.s3_base_prefix = s3_base_prefix
         self.stream_name = stream_name
@@ -57,7 +57,7 @@ class JsonBatchBuffer:
         payload = json.dumps(self.items, ensure_ascii=False)
         logger.info("Flushing JSON batch into %s", s3_uri)
 
-        self.s3_writer.put_text(
+        self.s3_handler.put_text(
             s3_uri=s3_uri,
             data=payload,
             content_type="application/json; charset=utf-8",

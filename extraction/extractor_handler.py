@@ -4,8 +4,8 @@ import sys
 
 from dotenv import load_dotenv
 
-from extraction.ibge.extractor import IbgeExtractor
-from extraction.rfb.extractor import RfbCnpjExtractor
+from ibge.extractor import IbgeExtractor
+from rfb.extractor import RfbCnpjExtractor
 
 
 logger = logging.getLogger(__name__)
