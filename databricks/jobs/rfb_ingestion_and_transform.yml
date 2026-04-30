@@ -1,0 +1,71 @@
+resources:
+  jobs:
+    rfb_ingestion_and_transform:
+      name: RFB Ingestion and Transform
+      tasks:
+        - task_key: bronze_ingestion
+          spark_python_task:
+            python_file: ../ingestion/autoloader/bronze_ingestion.py
+            parameters:
+              - --source
+              - rfb
+              - --path_domain
+              - cnpjs
+              - --streams
+              - "*"
+              - --format
+              - csv
+              - --encoding
+              - ISO-8859-1
+              - --header
+              - "false"
+              - --delimiter
+              - ";"
+              - --partition_by_column
+              - reference_month
+              - --landing_root
+              - ${var.LANDING_ROOT}
+              - --autoloader_root
+              - ${var.AUTOLOADER_ROOT}
+              - --bronze_root
+              - ${var.BRONZE_ROOT}
+              - --catalog
+              - ${var.DBT_CATALOG}
+              - --target_schema
+              - bronze
+          environment_key: Default
+
+        # - task_key: silver_load
+        #   depends_on:
+        #     - task_key: bronze_ingestion
+        #   environment_key: Default
+        #   dbt_task:
+        #     project_directory: ../transformation/dbt
+        #     warehouse_id: ${var.DBT_WAREHOUSE_ID}
+        #     catalog: ${var.DBT_CATALOG}
+        #     commands:
+        #       - dbt deps
+        #       - dbt seed --select tag:silver,tag:rfb
+        #       - dbt run --select tag:silver,tag:rfb
+
+        # - task_key: gold_load
+        #   depends_on:
+        #     - task_key: silver_load
+        #   environment_key: Default
+        #   dbt_task:
+        #     project_directory: ../transformation/dbt
+        #     warehouse_id: ${var.DBT_WAREHOUSE_ID}
+        #     catalog: ${var.DBT_CATALOG}
+        #     commands:
+        #       - dbt deps
+        #       - dbt run --select tag:gold,tag:rfb+
+      queue:
+        enabled: true
+      environments:
+        - environment_key: Default
+          spec:
+            dependencies:
+              - dbt-core==1.11.2
+              - dbt-databricks==1.11.4
+            environment_version: "5"
+      performance_target: PERFORMANCE_OPTIMIZED
