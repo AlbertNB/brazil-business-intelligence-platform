@@ -15,7 +15,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--streams", default="*", help="Comma-separated list or '*' to discover from landing.")
     p.add_argument("--format", default="json", help="Auto Loader format (json, csv).")
     p.add_argument("--encoding", default="UTF-8", help="Input file encoding. Default=UTF-8.")
-    p.add_argument("--multiline", default="true", help="JSON multiline (true/false). Useful for JSON arrays.")
+    p.add_argument(
+        "--multiline",
+        default="true",
+        help="Multiline records flag (true/false). Useful for JSON arrays and CSV fields containing line breaks.",
+    )
 
     # Optional CSV-specific behavior
     p.add_argument(
@@ -85,10 +89,10 @@ def list_streams_from_landing(dbutils, landing_base: str) -> List[str]:
 def build_reader(spark: SparkSession, args: argparse.Namespace, paths: Dict[str, str]):
     reader = (
         spark.readStream
-            .format("cloudFiles")
-            .option("cloudFiles.format", args.format)
-            .option("cloudFiles.schemaLocation", paths["schema_loc"])
-            .option("encoding", args.encoding)
+        .format("cloudFiles")
+        .option("cloudFiles.format", args.format)
+        .option("cloudFiles.schemaLocation", paths["schema_loc"])
+        .option("encoding", args.encoding)
     )
 
     if args.format.lower() == "json":
@@ -98,6 +102,7 @@ def build_reader(spark: SparkSession, args: argparse.Namespace, paths: Dict[str,
         reader = (
             reader
             .option("header", str(args.header).lower())
+            .option("multiLine", args.multiline.lower())
             .option("delimiter", args.delimiter)
             .option("quote", args.quote)
             .option("escape", args.escape)
