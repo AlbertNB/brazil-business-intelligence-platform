@@ -11,6 +11,7 @@ def parse_args() -> argparse.Namespace:
 
     # What to load
     p.add_argument("--source", required=True, help="Source name (e.g. ibge, rfb).")
+    p.add_argument("--path_domain", default="", help="Optional domain layer in path (e.g. cnpj/).")
     p.add_argument("--streams", default="*", help="Comma-separated list or '*' to discover from landing.")
     p.add_argument("--format", default="json", help="Auto Loader format (json, csv).")
     p.add_argument("--encoding", default="UTF-8", help="Input file encoding. Default=UTF-8.")
@@ -54,7 +55,7 @@ def join_path(*parts: str) -> str:
 
 
 def build_paths(args: argparse.Namespace, stream: str) -> Dict[str, str]:
-    base = join_path(args.landing_root, args.source)
+    base = join_path(args.landing_root, args.source, args.path_domain) if args.path_domain else join_path(args.landing_root, args.source)
     src = join_path(base, stream) + "/"
 
     table_name = f"{sql_safe(args.source)}__{sql_safe(stream)}"
