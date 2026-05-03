@@ -28,6 +28,8 @@ models:
         columns: true
       ibge:
         +tags: ['ibge']
+      rfb:
+        +tags: ['rfb']
 
     gold:
       +schema: gold
@@ -39,6 +41,10 @@ models:
 seeds:
   datalake:
     +schema: silver
+    +tags: ["silver"]
     ibge:
       +schema: silver
       +tags: ["ibge"]
+    rfb:
+      +schema: silver
+      +tags: ["rfb"]

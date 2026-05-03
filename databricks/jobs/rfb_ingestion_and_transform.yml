@@ -35,18 +35,19 @@ resources:
               - bronze
           environment_key: Default
 
-        # - task_key: silver_load
-        #   depends_on:
-        #     - task_key: bronze_ingestion
-        #   environment_key: Default
-        #   dbt_task:
-        #     project_directory: ../transformation/dbt
-        #     warehouse_id: ${var.DBT_WAREHOUSE_ID}
-        #     catalog: ${var.DBT_CATALOG}
-        #     commands:
-        #       - dbt deps
-        #       - dbt seed --select tag:silver,tag:rfb
-        #       - dbt run --select tag:silver,tag:rfb
+        - task_key: silver_load
+          depends_on:
+            - task_key: bronze_ingestion
+          environment_key: Default
+          dbt_task:
+            project_directory: ../transformation/dbt
+            warehouse_id: ${var.DBT_WAREHOUSE_ID}
+            catalog: ${var.DBT_CATALOG}
+            commands:
+              - dbt deps
+              - dbt seed --select tag:silver,tag:rfb
+              - dbt run --select tag:silver,tag:rfb
+              - dbt test --select tag:silver,tag:rfb
 
         # - task_key: gold_load
         #   depends_on:

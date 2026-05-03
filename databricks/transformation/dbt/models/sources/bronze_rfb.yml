@@ -1,0 +1,62 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    description: >
+      Raw data.
+
+    tables:
+      - name: rfb__empresas
+        description: >
+          Raw dataset of Brazilian companies from Receita Federal do Brasil (RFB).
+          Contains company root identifiers, legal names, legal nature codes,
+          share capital and size information.
+          Partitioned by reference_month (YYYY-MM).
+
+      - name: rfb__estabelecimentos
+        description: >
+          Raw dataset of Brazilian company establishments from RFB.
+          Each record represents one establishment (CNPJ completo) linked to
+          a company root (CNPJ raiz). Contains address, activity, registration
+          status and contact information.
+          Partitioned by reference_month (YYYY-MM).
+
+      - name: rfb__socios
+        description: >
+          Raw dataset of company partners (quadro societário) from RFB.
+          Contains partner identification, qualification and legal representative
+          information for each company root.
+          Partitioned by reference_month (YYYY-MM).
+
+      - name: rfb__simples
+        description: >
+          Raw dataset of Simples Nacional and MEI registration data from RFB.
+          Contains option and exclusion dates for both Simples and MEI regimes,
+          keyed by company root identifier.
+          Partitioned by reference_month (YYYY-MM).
+
+      - name: rfb__naturezas
+        description: >
+          Reference table of Brazilian legal natures (natureza jurídica) from RFB.
+          Maps a two-digit code to its official description.
+
+      - name: rfb__qualificacoes
+        description: >
+          Reference table of partner qualification codes (qualificações de sócios) from RFB.
+          Maps a numeric code to its official description.
+
+      - name: rfb__municipios
+        description: >
+          Reference table of municipalities as coded by RFB.
+          Maps a numeric code to the municipality name used in the CNPJ dataset.
+
+      - name: rfb__paises
+        description: >
+          Reference table of countries as coded by RFB.
+          Maps a numeric code to the country name used in the CNPJ dataset.
+
+      - name: rfb__motivos
+        description: >
+          Reference table of registration status reasons (motivos de situação cadastral) from RFB.
+          Maps a numeric code to its official description.

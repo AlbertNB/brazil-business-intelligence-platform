@@ -1,0 +1,517 @@
+version: 2
+
+models:
+
+  # ── Incremental models ────────────────────────────────────────────────────
+
+  - name: rfb__companies
+    description: >
+      Curated dataset of Brazilian companies (CNPJ raiz) from Receita Federal do Brasil (silver layer).
+      Deduplicated by company_root_id, merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
+    columns:
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits). Natural key."
+        data_tests:
+          - not_null
+          - unique
+      - name: legal_name
+        description: "Official company legal name (razão social)."
+        tests: [not_null]
+      - name: legal_nature_code
+        description: "Legal nature code. Foreign key to rfb__legal_natures."
+        tests:
+          - relationships:
+              to: ref('rfb__legal_natures')
+              field: legal_nature_code
+              config:
+                severity: warn
+      - name: responsible_person_qualification
+        description: "Qualification code of the responsible person."
+        tests:
+          - relationships:
+              to: ref('rfb__qualifications')
+              field: qualification_code
+              config:
+                severity: warn
+      - name: share_capital
+        description: "Share capital value as declared to RFB (decimal)."
+      - name: company_size_id
+        description: "Company size code (00=NOT_INFORMED, 01=MICRO_COMPANY, 03=SMALL_COMPANY, 05=OTHER)."
+        tests:
+          - accepted_values:
+              values: ['00', '01', '03', '05']
+      - name: company_size_description
+        description: "Company size label in uppercase (NOT_INFORMED, MICRO_COMPANY, SMALL_COMPANY, OTHER)."
+      - name: federative_entity_responsible
+        description: "Federative entity responsible for this company, when applicable."
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__establishments
+    description: >
+      Core establishment data (CNPJ completo) from RFB (silver layer).
+      Each row is one establishment identified by its full 14-digit CNPJ.
+      Merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: cnpj_id = concat(company_root_id, establishment_order, establishment_check_digit)
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(establishment_order) = 4
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(establishment_check_digit) = 2
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ (company_root_id + establishment_order + establishment_check_digit). Natural key."
+        data_tests:
+          - not_null
+          - unique
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits)."
+        data_tests:
+          - not_null
+      - name: establishment_order
+        description: "Establishment order (4 digits)."
+        data_tests:
+          - not_null
+      - name: establishment_check_digit
+        description: "Establishment check digit (2 digits)."
+        data_tests:
+          - not_null
+      - name: establishment_type_id
+        description: "Establishment type code (1=HEADQUARTERS, 2=BRANCH)."
+        tests:
+          - accepted_values:
+              values: ['1', '2']
+      - name: establishment_type_description
+        description: "Establishment type label in uppercase (HEADQUARTERS, BRANCH)."
+      - name: trade_name
+        description: "Trade name (nome fantasia) of the establishment."
+      - name: registration_status_id
+        description: "Registration status code (01=NULL_REGISTRATION, 02=ACTIVE, 03=SUSPENDED, 04=UNFIT, 08=CLOSED)."
+        tests:
+          - accepted_values:
+              values: ['01', '02', '03', '04', '08']
+      - name: registration_status_description
+        description: "Registration status label in uppercase (NULL_REGISTRATION, ACTIVE, SUSPENDED, UNFIT, CLOSED)."
+      - name: registration_status_date
+        description: "Date of the current registration status (date)."
+      - name: registration_status_reason_code
+        description: "Reason code for the registration status. FK to rfb__registration_status_reasons."
+        tests:
+          - relationships:
+              to: ref('rfb__registration_status_reasons')
+              field: registration_status_reason_code
+              config:
+                severity: warn
+      - name: activity_start_date
+        description: "Date the establishment started its economic activities (date)."
+      - name: special_status
+        description: "Special status description, when applicable."
+      - name: special_status_date
+        description: "Date of the special status, when applicable (date)."
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__establishment_addresses
+    description: >
+      Address data for each establishment (CNPJ completo) from RFB (silver layer).
+      One row per CNPJ. FK to rfb__establishments via cnpj.
+      Merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ. FK to rfb__establishments."
+        data_tests:
+          - not_null
+          - unique
+      - name: foreign_city_name
+        description: "City name for foreign-based establishments."
+      - name: country_code
+        description: "Country code. FK to rfb__countries."
+        tests:
+          - relationships:
+              to: ref('rfb__countries')
+              field: country_code
+              config:
+                severity: warn
+      - name: address_type
+        description: "Address type (e.g. RUA, AVENIDA)."
+      - name: street_name
+        description: "Street name."
+      - name: street_number
+        description: "Street number."
+      - name: address_complement
+        description: "Address complement."
+      - name: neighborhood
+        description: "Neighborhood (bairro)."
+      - name: postal_code
+        description: "Brazilian postal code (CEP, 8 digits)."
+      - name: state
+        description: "State abbreviation (UF)."
+        tests:
+          - accepted_values:
+              values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','EX']
+      - name: municipality_code
+        description: "Municipality code. FK to rfb__municipalities."
+        tests:
+          - relationships:
+              to: ref('rfb__municipalities')
+              field: municipality_code
+              config:
+                severity: warn
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__establishment_contacts
+    description: >
+      Contact information (phone, fax, email) for each establishment from RFB (silver layer).
+      One row per CNPJ. FK to rfb__establishments via cnpj.
+      Merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ. FK to rfb__establishments."
+        data_tests:
+          - not_null
+          - unique
+      - name: phone_area_code_1
+        description: "Area code (DDD) for primary phone."
+      - name: phone_number_1
+        description: "Primary phone number."
+      - name: phone_area_code_2
+        description: "Area code (DDD) for secondary phone."
+      - name: phone_number_2
+        description: "Secondary phone number."
+      - name: fax_area_code
+        description: "Area code (DDD) for fax."
+      - name: fax_number
+        description: "Fax number."
+      - name: email
+        description: "Contact email address."
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__establishment_activities
+    description: >
+      CNAE economic activity codes per establishment from RFB (silver layer).
+      One row per CNPJ + cnae_code combination (main and secondary activities exploded).
+      FK to rfb__establishments via cnpj.
+      Merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ. FK to rfb__establishments. Part of composite key."
+        data_tests:
+          - not_null
+      - name: is_main_activity
+        description: "True if this is the main CNAE activity; false if secondary."
+        tests: [not_null]
+      - name: cnae_code
+        description: "CNAE economic activity code. Part of composite key."
+        tests: [not_null]
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__bridge_ibge_municipalities
+    description: >
+      Bridge table that maps RFB municipality code/name pairs to IBGE municipality identifiers,
+      using normalized name matching constrained by state and manual seed-based overrides.
+      Built as table from latest Bronze RFB snapshots plus Silver IBGE municipalities.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: source_state_abbreviation = ibge_state_abbreviation
+          config:
+            where: ibge_municipality_id is not null
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: match_status = 'MATCHED'
+          config:
+            severity: warn
+    columns:
+      - name: source_system
+        description: "Origin system identifier for the mapping row."
+        tests: [not_null]
+      - name: source_municipality_code
+        description: "Municipality code from the source system (RFB)."
+        tests: [not_null]
+      - name: source_municipality_name
+        description: "Municipality name from the source system (RFB)."
+      - name: source_state_abbreviation
+        description: "UF abbreviation from the source system (RFB)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','EX']
+      - name: ibge_municipality_id
+        description: "Matched municipality id in IBGE dimension."
+      - name: ibge_municipality_name
+        description: "Matched municipality name in IBGE dimension."
+      - name: ibge_state_abbreviation
+        description: "UF abbreviation from IBGE side for the matched municipality."
+      - name: is_override_applied
+        description: "True when municipality matching used a manual override from seed; false otherwise."
+        tests: [not_null]
+      - name: match_status
+        description: "Matching outcome label: MATCHED when IBGE municipality was found, UNMATCHED otherwise."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['MATCHED', 'UNMATCHED']
+
+  - name: rfb__partners
+    description: >
+      Curated dataset of company partners (quadro societário) from RFB (silver layer).
+      Composite key: (company_root_id, partner_name, partner_document_id).
+      Merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: partner_name is not null or partner_document_id is not null
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
+    columns:
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits). Part of composite key."
+        data_tests:
+          - not_null
+      - name: partner_identifier_id
+        description: "Partner identifier type code (1=LEGAL_ENTITY, 2=INDIVIDUAL, 3=FOREIGNER)."
+        tests:
+          - accepted_values:
+              values: ['1', '2', '3']
+      - name: partner_identifier_description
+        description: "Partner identifier type label in uppercase (LEGAL_ENTITY, INDIVIDUAL, FOREIGNER)."
+      - name: partner_name
+        description: "Partner name. Part of composite key."
+      - name: partner_document_id
+        description: "Partner document identifier (CPF/CNPJ, masked). Part of composite key."
+      - name: partner_qualification_code
+        description: "Partner qualification code. FK to rfb__qualifications."
+        tests:
+          - relationships:
+              to: ref('rfb__qualifications')
+              field: qualification_code
+              config:
+                severity: warn
+      - name: partnership_start_date
+        description: "Date the partnership started (date)."
+      - name: country_code
+        description: "Country code of the partner. FK to rfb__countries."
+        tests:
+          - relationships:
+              to: ref('rfb__countries')
+              field: country_code
+              config:
+                severity: warn
+      - name: legal_representative_document_id
+        description: "Legal representative document identifier."
+      - name: legal_representative_name
+        description: "Legal representative name."
+      - name: legal_representative_qualification_code
+        description: "Legal representative qualification code. FK to rfb__qualifications."
+        tests:
+          - relationships:
+              to: ref('rfb__qualifications')
+              field: qualification_code
+              config:
+                severity: warn
+      - name: age_group_id
+        description: "Age group code (0=NOT_APPLICABLE, 1=0_TO_12, 2=13_TO_20, 3=21_TO_30, 4=31_TO_40, 5=41_TO_50, 6=51_TO_60, 7=61_TO_70, 8=71_TO_80, 9=OVER_80)."
+        tests:
+          - accepted_values:
+              values: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+      - name: age_group_description
+        description: "Age group label in uppercase."
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__simples
+    description: >
+      Curated dataset of Simples Nacional and MEI registration data from RFB (silver layer).
+      Deduplicated by company_root_id, merged incrementally.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
+    columns:
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits). Natural key."
+        data_tests:
+          - not_null
+          - unique
+      - name: is_simples
+        description: "Whether the company is opted into Simples Nacional (true/false)."
+      - name: simples_option_date
+        description: "Date the company opted into Simples Nacional (date)."
+      - name: simples_exclusion_date
+        description: "Date the company was excluded from Simples Nacional (date)."
+      - name: is_mei
+        description: "Whether the company is opted into MEI (true/false)."
+      - name: mei_option_date
+        description: "Date the company opted into MEI (date)."
+      - name: mei_exclusion_date
+        description: "Date the company was excluded from MEI (date)."
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  # ── Reference / lookup tables ─────────────────────────────────────────────
+
+  - name: rfb__legal_natures
+    description: >
+      Reference table of Brazilian legal natures (natureza jurídica) from RFB (silver layer).
+      Full refresh. Deduplicated by legal_nature_code.
+    columns:
+      - name: legal_nature_code
+        description: "Legal nature code (4 digits). Natural key."
+        tests: [not_null, unique]
+      - name: legal_nature_description
+        description: "Official legal nature description."
+        tests: [not_null]
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__qualifications
+    description: >
+      Reference table of partner qualification codes (qualificações de sócios) from RFB (silver layer).
+      Full refresh. Deduplicated by qualification_code.
+    columns:
+      - name: qualification_code
+        description: "Qualification code. Natural key."
+        tests: [not_null, unique]
+      - name: qualification_description
+        description: "Official qualification description."
+        tests: [not_null]
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__municipalities
+    description: >
+      Reference table of municipalities as coded by RFB (silver layer).
+      Full refresh. Deduplicated by municipality_code.
+    columns:
+      - name: municipality_code
+        description: "RFB municipality code. Natural key."
+        tests: [not_null, unique]
+      - name: municipality_name
+        description: "Municipality name as used in the CNPJ dataset."
+        tests: [not_null]
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__countries
+    description: >
+      Reference table of countries as coded by RFB (silver layer).
+      Full refresh. Deduplicated by country_code.
+    columns:
+      - name: country_code
+        description: "RFB country code. Natural key."
+        tests: [not_null, unique]
+      - name: country_name
+        description: "Country name as used in the CNPJ dataset."
+        tests: [not_null]
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+  - name: rfb__registration_status_reasons
+    description: >
+      Reference table of registration status reasons (motivos de situação cadastral) from RFB (silver layer).
+      Full refresh. Deduplicated by registration_status_reason_code.
+    columns:
+      - name: registration_status_reason_code
+        description: "Registration status reason code. Natural key."
+        tests: [not_null, unique]
+      - name: registration_status_reason_description
+        description: "Official description of the registration status reason."
+        tests: [not_null]
+      - name: reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
