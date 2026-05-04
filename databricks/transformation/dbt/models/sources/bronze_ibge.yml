@@ -29,3 +29,15 @@ sources:
           Contains values for a set of indicators broken down by geographic unit
           (e.g. municipality, state), as returned by the IBGE SIDRA/Agregados API.
           Each record represents a single indicator result for a given location and reference period.
+
+      - name: ibge__cnaes
+        description: >
+          Raw dataset of IBGE CNAE subclasses.
+          Contains CNAE subclass identifier, description, class object,
+          activities list and notes list as returned by the IBGE CNAE API.
+
+      - name: ibge__geolocation
+        description: >
+          Raw geospatial dataset from IBGE malhas API in GeoJSON format.
+          Contains top-level GeoJSON type and features payload partitioned by geo_level
+          (municipality, state, country).

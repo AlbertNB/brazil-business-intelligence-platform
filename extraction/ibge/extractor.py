@@ -43,6 +43,16 @@ class IbgeExtractor:
        - Requests: ~5,600+ (one per municipality + one per state)
        - Output: s3://bucket/ibge/resultados/_extraction={TIMESTAMP}/resultados_{TIMESTAMP}_batch_{N}.json
 
+    4. **cnaes** - CNAE subclasses
+       - Endpoint: GET /api/v2/cnae/subclasses
+       - Returns: Full list of CNAE subclasses with codes and descriptions
+       - Output: s3://bucket/ibge/cnaes/_extraction={TIMESTAMP}/cnaes_{TIMESTAMP}.json
+
+     5. **geolocation** - GeoJSON geometry files
+         - Endpoint: GET /api/v4/malhas/paises/BR (with different intrarregiao params)
+         - Returns: GeoJSON geometries for country, all states and all municipalities
+         - Output: s3://bucket/ibge/geolocation/_extraction={TIMESTAMP}/geo_level={TYPE}/geolocation_{TIMESTAMP}_{TYPE}.geojson
+
     Usage:
         extractor = IbgeExtractor(
             s3_bucket="my-bucket",
@@ -81,6 +91,11 @@ class IbgeExtractor:
             acceptable_status_codes={200},
             backoff_sec=2.0,
         )
+        self.http_geo = HttpClient(
+            acceptable_status_codes={200},
+            backoff_sec=5.0,
+            timeout_sec=300,
+        )
         self.s3 = S3Handler()
 
         self.stream_handler = {
@@ -93,6 +108,12 @@ class IbgeExtractor:
                 extraction_ts=extraction_ts,
             ),
             "resultados": lambda extraction_ts: self.extract_results(
+                extraction_ts=extraction_ts,
+            ),
+            "cnaes": lambda extraction_ts: self.extract_cnaes(
+                extraction_ts=extraction_ts,
+            ),
+            "geolocation": lambda extraction_ts: self.extract_geolocation(
                 extraction_ts=extraction_ts,
             ),
         }
@@ -270,3 +291,84 @@ class IbgeExtractor:
         )
 
         return buffer.written_files
+
+    def extract_cnaes(
+        self,
+        extraction_ts: Optional[str] = None,
+    ) -> str:
+        """Extract CNAE subclasses and upload to S3."""
+        extraction_ts = extraction_ts or utc_now_iso()
+
+        response = self.http.request(
+            method="GET",
+            url=f"{self.BASE_URL}/api/v2/cnae/subclasses",
+        )
+
+        s3_uri = self._build_s3_uri("cnaes", extraction_ts)
+
+        self.s3.put_text(
+            s3_uri=s3_uri,
+            data=json.dumps(response.json(), ensure_ascii=False),
+            content_type="application/json; charset=utf-8",
+        )
+        return s3_uri
+
+    def _build_geolocation_s3_uri(self, geo_level: str, extraction_ts: str) -> str:
+        """Build the S3 URI for a geolocation GeoJSON file."""
+        key = s3_join(
+            self.s3_base_prefix,
+            "geolocation",
+            f"_extraction={extraction_ts}",
+            f"geo_level={geo_level}",
+            f"geolocation_{extraction_ts}_{geo_level}.geojson",
+        )
+        return f"s3://{self.s3_bucket}/{key}"
+
+    def extract_geolocation(
+        self,
+        extraction_ts: Optional[str] = None,
+    ) -> List[str]:
+        """Extract GeoJSON geometry files for country, states and municipalities."""
+        extraction_ts = extraction_ts or utc_now_iso()
+
+        geolocation_url = f"{self.BASE_URL}/api/v4/malhas/paises/BR"
+        endpoints = [
+            {
+                "geo_level": "municipality",
+                "params": {"intrarregiao": "municipio", "formato": "application/vnd.geo+json"},
+            },
+            {
+                "geo_level": "state",
+                "params": {"intrarregiao": "UF", "formato": "application/vnd.geo+json"},
+            },
+            {
+                "geo_level": "country",
+                "params": {"formato": "application/vnd.geo+json"},
+            },
+        ]
+
+        written_files: List[str] = []
+
+        for endpoint in endpoints:
+            geo_level = endpoint["geo_level"]
+            logger.info("Fetching geolocation | geo_level=%s", geo_level)
+
+            response = self.http_geo.request(
+                method="GET",
+                url=geolocation_url,
+                params=endpoint["params"],
+                log_progress=True,
+                progress_chunk_size=5 * 1024 * 1024
+            )
+
+            s3_uri = self._build_geolocation_s3_uri(geo_level, extraction_ts)
+
+            self.s3.put_text(
+                s3_uri=s3_uri,
+                data=response.text,
+                content_type="application/vnd.geo+json; charset=utf-8",
+            )
+            written_files.append(s3_uri)
+            logger.info("Geolocation uploaded | geo_level=%s | s3_uri=%s", geo_level, s3_uri)
+
+        return written_files
