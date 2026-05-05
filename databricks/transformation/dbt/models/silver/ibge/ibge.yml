@@ -113,7 +113,7 @@ models:
         tests: [not_null]
 
   - name: ibge__cnaes
-    description: "Curated CNAE subclasses dataset from IBGE (silver layer), with full hierarchy flattened: subclasse → classe → grupo → divisão → seção."
+    description: "Curated CNAE subclasses dataset from IBGE (silver layer), with full hierarchy flattened: subclass → class → group → division → section."
     columns:
       - name: section_id
         description: "CNAE section identifier."
