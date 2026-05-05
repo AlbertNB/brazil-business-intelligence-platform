@@ -46,8 +46,14 @@ class HttpClient:
         params: Optional[Dict[str, Any]] = None,
         json_body: Optional[Any] = None,
         headers: Optional[Dict[str, str]] = None,
+        log_progress: bool = False,
+        progress_chunk_size: int = 1024 * 1024,
     ) -> requests.Response:
-        """Send an HTTP request with retry behavior for transient errors."""
+        """Send an HTTP request with retry behavior for transient errors.
+
+        When ``log_progress=True`` the response is streamed and download progress
+        is logged every ``progress_chunk_size`` bytes (default 1 MB).
+        """
         for attempt in range(1, self.max_retries + 1):
             try:
                 logger.debug("Attempt %s, %s - %s", attempt, method.upper(), url)
@@ -58,6 +64,7 @@ class HttpClient:
                     json=json_body,
                     headers=headers or {},
                     timeout=self.timeout_sec,
+                    stream=log_progress,
                 )
 
                 if response.status_code not in self.acceptable_status_codes:
@@ -65,6 +72,35 @@ class HttpClient:
                         f"Unexpected HTTP status {response.status_code}",
                         response=response,
                     )
+
+                if log_progress:
+                    total: Optional[int] = None
+                    content_length = response.headers.get("Content-Length")
+                    if content_length and content_length.isdigit():
+                        total = int(content_length)
+
+                    downloaded = 0
+                    chunks = []
+                    for chunk in response.iter_content(chunk_size=progress_chunk_size):
+                        if not chunk:
+                            continue
+                        chunks.append(chunk)
+                        downloaded += len(chunk)
+                        if total:
+                            logger.info(
+                                "Download progress | url=%s | %.1f MB / %.1f MB (%.0f%%)",
+                                url,
+                                downloaded / 1024 / 1024,
+                                total / 1024 / 1024,
+                                downloaded / total * 100,
+                            )
+                        else:
+                            logger.info(
+                                "Download progress | url=%s | %.1f MB downloaded",
+                                url,
+                                downloaded / 1024 / 1024,
+                            )
+                    response._content = b"".join(chunks)
 
                 return response
 
