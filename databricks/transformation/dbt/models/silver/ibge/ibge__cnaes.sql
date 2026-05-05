@@ -46,24 +46,24 @@ with base as (
 ) }}
 
 select
-    trim(classe_struct.grupo.divisao.secao.id)            as secao_id,
-    trim(classe_struct.grupo.divisao.secao.descricao)     as secao_descricao,
-
-    trim(classe_struct.grupo.divisao.id)                  as divisao_id,
-    trim(classe_struct.grupo.divisao.descricao)           as divisao_descricao,
-
-    trim(classe_struct.grupo.id)                          as grupo_id,
-    trim(classe_struct.grupo.descricao)                   as grupo_descricao,
-
-    trim(classe_struct.id)                                as classe_id,
-    trim(classe_struct.descricao)                         as classe_descricao,
-    classe_struct.observacoes                             as classe_observacoes,
-
     cnae_id,
     cnae_description,
 
-    atividades as atividades_cnae,
-    observacoes as observacoes_cnae,
+    trim(classe_struct.id)                                as class_id,
+    trim(classe_struct.descricao)                         as class_description,
+    classe_struct.observacoes                             as class_notes,
+
+    trim(classe_struct.grupo.id)                          as group_id,
+    trim(classe_struct.grupo.descricao)                   as group_description,
+
+    trim(classe_struct.grupo.divisao.id)                  as division_id,
+    trim(classe_struct.grupo.divisao.descricao)           as division_description,
+
+    trim(classe_struct.grupo.divisao.secao.id)            as section_id,
+    trim(classe_struct.grupo.divisao.secao.descricao)     as section_description,
+
+    atividades as cnae_activities,
+    observacoes as cnae_notes,
 
     _ingestion_ts,
     _load_ts

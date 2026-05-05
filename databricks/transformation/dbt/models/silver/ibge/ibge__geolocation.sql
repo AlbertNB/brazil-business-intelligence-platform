@@ -70,6 +70,7 @@ exploded as (
         end as geom_json,
         b._extraction,
         b._ingestion_ts,
+        b._source_file,
         b._load_ts
 
     from base b
@@ -89,7 +90,6 @@ normalized as (
 
         trim(feature_item.properties.codarea)  as location_id,
 
-        _extraction,
         _ingestion_ts,
         _load_ts
 

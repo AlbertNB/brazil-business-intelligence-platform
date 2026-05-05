@@ -115,28 +115,28 @@ models:
   - name: ibge__cnaes
     description: "Curated CNAE subclasses dataset from IBGE (silver layer), with full hierarchy flattened: subclasse → classe → grupo → divisão → seção."
     columns:
-      - name: secao_id
+      - name: section_id
         description: "CNAE section identifier."
         tests: [not_null]
-      - name: secao_descricao
+      - name: section_description
         description: "CNAE section description."
         tests: [not_null]
-      - name: divisao_id
+      - name: division_id
         description: "CNAE division identifier."
         tests: [not_null]
-      - name: divisao_descricao
+      - name: division_description
         description: "CNAE division description."
         tests: [not_null]
-      - name: grupo_id
+      - name: group_id
         description: "CNAE group identifier."
         tests: [not_null]
-      - name: grupo_descricao
+      - name: group_description
         description: "CNAE group description."
         tests: [not_null]
-      - name: classe_id
+      - name: class_id
         description: "CNAE class identifier."
         tests: [not_null]
-      - name: classe_descricao
+      - name: class_description
         description: "CNAE class description."
         tests: [not_null]
       - name: cnae_id
@@ -145,11 +145,11 @@ models:
       - name: cnae_description
         description: "CNAE subclass description."
         tests: [not_null]
-      - name: classe_observacoes
+      - name: class_notes
         description: "Array of notes associated with the CNAE class."
-      - name: atividades_cnae
+      - name: cnae_activities
         description: "Array of CNAE subclass activity descriptions."
-      - name: observacoes_cnae
+      - name: cnae_notes
         description: "Array of notes associated with the CNAE subclass."
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."

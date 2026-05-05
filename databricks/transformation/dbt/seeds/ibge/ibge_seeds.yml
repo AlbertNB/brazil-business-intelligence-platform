@@ -15,3 +15,20 @@ seeds:
         description: "Unit of measure for the indicator."
       - name: source_level
         description: "How the indicator value is classified (census, estimate, territorial_extent)."
+
+  - name: ibge__location_manual_rows
+    description: "Manual fixed locations used by gold.dim_location (rows not present in IBGE source datasets)."
+    columns:
+      - name: location_nk
+        description: "Natural key for fixed location row."
+        tests:
+          - not_null
+          - unique
+      - name: location_name
+        description: "Display name for fixed location row."
+        tests:
+          - not_null
+      - name: location_type
+        description: "Location type for fixed location row."
+        tests:
+          - not_null
