@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: dim_location
-    description: "SCD1 location dimension for Brazilian IBGE geographies, unifying states and municipalities under a single natural location key."
+    description: "Location dimension for Brazilian IBGE geographies, unifying states, municipalities, and manually added locations under a single natural location key. Fully refreshed on each run."
     columns:
       - name: location_sk
         description: "Deterministic surrogate key generated from location_nk."
@@ -13,9 +13,69 @@ models:
         tests: [not_null, unique]
 
       - name: location_type
-        description: "Location type in the model (state or city)."
+        description: "Location granularity: state, municipality, county or abroad."
         tests: [not_null]
 
       - name: location_name
         description: "Human-readable location name."
+        tests: [not_null]
+
+      - name: ibge_id
+        description: "Numeric IBGE identifier. Null for manually added locations."
+
+      - name: ibge_code
+        description: "String representation of the IBGE identifier. Null for manually added locations."
+
+      - name: state_id
+        description: "IBGE state identifier. Populated for municipalities; null for states and manual rows."
+
+      - name: state_name
+        description: "State name. Populated for municipalities; null for states and manual rows."
+
+      - name: state_abbreviation
+        description: "Two-letter state abbreviation (UF). Populated for states and municipalities."
+
+      - name: region_id
+        description: "IBGE macro-region identifier."
+
+      - name: region_name
+        description: "Macro-region name (e.g., Sudeste, Nordeste)."
+
+      - name: region_abbreviation
+        description: "Macro-region abbreviation."
+
+      - name: mesoregion_id
+        description: "IBGE mesoregion identifier. Populated for municipalities; null for states."
+
+      - name: mesoregion_name
+        description: "Mesoregion name. Populated for municipalities; null for states."
+
+      - name: microregion_id
+        description: "IBGE microregion identifier. Populated for municipalities; null for states."
+
+      - name: microregion_name
+        description: "Microregion name. Populated for municipalities; null for states."
+
+      - name: immediate_region_id
+        description: "IBGE immediate region identifier. Populated for municipalities; null for states."
+
+      - name: immediate_region_name
+        description: "Immediate region name. Populated for municipalities; null for states."
+
+      - name: intermediate_region_id
+        description: "IBGE intermediate region identifier. Populated for municipalities; null for states."
+
+      - name: intermediate_region_name
+        description: "Intermediate region name. Populated for municipalities; null for states."
+
+      - name: source
+        description: "Origin of the record: ibge or manual."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Timestamp when the source record was ingested into Bronze."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this Gold row was last written."
         tests: [not_null]
