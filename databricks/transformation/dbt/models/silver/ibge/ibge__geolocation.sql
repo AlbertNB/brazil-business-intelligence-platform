@@ -5,18 +5,23 @@
 with source as (
 
     select
-        trim(cast(geo_level as string))   as location_type,
-        trim(cast(type as string))        as geojson_type,
-        cast(features as string)          as features_str,
+        trim(cast(geo_level as string))      as location_type,
+        trim(cast(type as string))           as geojson_type,
+        cast(features as string)             as features_str,
         cast(_extraction_ts as timestamp)    as _extraction_ts,
-        cast(_ingestion_ts as timestamp)  as _ingestion_ts,
-        current_timestamp()               as _load_ts
+        cast(_ingestion_ts as timestamp)     as _ingestion_ts,
+        current_timestamp()                  as _load_ts
 
     from {{ source('bronze', 'ibge__geolocation') }}
     where trim(cast(geo_level as string)) is not null
       and cast(features as string) is not null
       and trim(cast(features as string)) <> ''
 ),
+
+{{ latest_dedup(
+    source_cte = "source",
+    partition_by = ["location_type"]
+) }},
 
 base as (
 
@@ -48,11 +53,10 @@ base as (
             f -> to_json(f.geometry)
         ) as geom_multipolygon_jsons,
 
-        _extraction_ts,
         _ingestion_ts,
         _load_ts
 
-    from source
+    from dedup
 ),
 
 exploded as (
@@ -66,47 +70,22 @@ exploded as (
             when 'Polygon'      then b.geom_polygon_jsons[feature_position]
             when 'MultiPolygon' then b.geom_multipolygon_jsons[feature_position]
         end as geom_json,
-        b._extraction_ts,
         b._ingestion_ts,
         b._load_ts
 
     from base b
     lateral view posexplode(b.features_meta) t as feature_position, feature_item
-),
-
-normalized as (
-
-    select
-        location_type,
-        geojson_type,
-        trim(feature_item.type)              as feature_type,
-        trim(feature_item.geometry.type)     as geometry_type,
-
-        geom_json                            as geometry_geojson,
-        'geoJSON'                            as geometry_source_format,
-
-        trim(feature_item.properties.codarea)  as location_id,
-
-        _ingestion_ts,
-        _load_ts
-
-    from exploded
-),
-
-{{ latest_dedup(
-    source_cte = "normalized",
-    partition_by = ["location_type", "location_id"]
-) }}
+)
 
 select
     location_type,
-    location_id,
+    trim(feature_item.properties.codarea)  as location_id,
     geojson_type,
-    feature_type,
-    geometry_type,
-    geometry_geojson,
-    geometry_source_format,
+    trim(feature_item.type)                as feature_type,
+    trim(feature_item.geometry.type)       as geometry_type,
+    geom_json                              as geometry_geojson,
+    'geoJSON'                              as geometry_source_format,
     _ingestion_ts,
     _load_ts
 
-from dedup
+from exploded
