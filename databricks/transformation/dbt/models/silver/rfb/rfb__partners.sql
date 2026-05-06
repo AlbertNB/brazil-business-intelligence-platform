@@ -34,7 +34,7 @@ with source as (
             when '8' then '71_TO_80'
             when '9' then 'OVER_80'
         end                                                             as age_group_description,
-        trim(cast(reference_month as string))                           as reference_month,
+        trim(cast(_reference_month as string))                           as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__socios') }}
@@ -46,7 +46,7 @@ with source as (
 {{ latest_dedup(
     source_cte = 'source',
     partition_by = ['company_root_id', 'partner_name', 'partner_document_id'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
@@ -63,7 +63,7 @@ select
     legal_representative_qualification_code,
     age_group_id,
     age_group_description,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup

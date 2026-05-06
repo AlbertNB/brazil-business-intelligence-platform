@@ -13,7 +13,7 @@ with source as (
         {{ rfb_flag('_c4') }}                                           as is_mei,
         {{ rfb_date('_c5') }}                                               as mei_option_date,
         {{ rfb_date('_c6') }}                                               as mei_exclusion_date,
-        trim(cast(reference_month as string))                           as reference_month,
+        trim(cast(_reference_month as string))                           as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__simples') }}
@@ -25,7 +25,7 @@ with source as (
 {{ latest_dedup(
     source_cte = 'source',
     partition_by = ['company_root_id'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
@@ -36,7 +36,7 @@ select
     is_mei,
     mei_option_date,
     mei_exclusion_date,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup

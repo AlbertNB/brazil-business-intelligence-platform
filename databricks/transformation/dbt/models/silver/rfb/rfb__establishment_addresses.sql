@@ -21,7 +21,7 @@ with source as (
         trim(cast(_c18 as string))                                                          as postal_code,
         trim(cast(_c19 as string))                                                          as state,
         trim(cast(_c20 as string))                                                          as municipality_code,
-        trim(cast(reference_month as string))                                               as reference_month,
+        trim(cast(_reference_month as string))                                               as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__estabelecimentos') }}
@@ -33,7 +33,7 @@ with source as (
 {{ latest_dedup(
     source_cte = 'source',
     partition_by = ['cnpj_id'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
@@ -48,7 +48,7 @@ select
     postal_code,
     state,
     municipality_code,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup

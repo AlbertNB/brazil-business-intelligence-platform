@@ -22,7 +22,7 @@ resources:
               - --delimiter
               - ";"
               - --partition_by_column
-              - reference_month
+              - _reference_month
               - --landing_root
               - ${var.LANDING_ROOT}
               - --autoloader_root

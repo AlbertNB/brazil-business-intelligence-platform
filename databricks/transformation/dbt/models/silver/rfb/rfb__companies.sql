@@ -19,7 +19,7 @@ with source as (
             when '05' then 'OTHER'
         end                                                                         as company_size_description,
         trim(cast(_c6 as string))                                                   as federative_entity_responsible,
-        trim(cast(reference_month as string))                                       as reference_month,
+        trim(cast(_reference_month as string))                                       as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__empresas') }}
@@ -31,7 +31,7 @@ with source as (
 {{ latest_dedup(
     source_cte = 'source',
     partition_by = ['company_root_id'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
@@ -43,7 +43,7 @@ select
     company_size_id,
     company_size_description,
     federative_entity_responsible,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup

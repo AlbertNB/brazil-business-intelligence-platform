@@ -12,7 +12,7 @@ sources:
           Raw dataset of Brazilian companies from Receita Federal do Brasil (RFB).
           Contains company root identifiers, legal names, legal nature codes,
           share capital and size information.
-          Partitioned by reference_month (YYYY-MM).
+          Partitioned by _reference_month (YYYY-MM).
 
       - name: rfb__estabelecimentos
         description: >
@@ -20,21 +20,21 @@ sources:
           Each record represents one establishment (CNPJ completo) linked to
           a company root (CNPJ raiz). Contains address, activity, registration
           status and contact information.
-          Partitioned by reference_month (YYYY-MM).
+          Partitioned by _reference_month (YYYY-MM).
 
       - name: rfb__socios
         description: >
           Raw dataset of company partners (quadro societário) from RFB.
           Contains partner identification, qualification and legal representative
           information for each company root.
-          Partitioned by reference_month (YYYY-MM).
+          Partitioned by _reference_month (YYYY-MM).
 
       - name: rfb__simples
         description: >
           Raw dataset of Simples Nacional and MEI registration data from RFB.
           Contains option and exclusion dates for both Simples and MEI regimes,
           keyed by company root identifier.
-          Partitioned by reference_month (YYYY-MM).
+          Partitioned by _reference_month (YYYY-MM).
 
       - name: rfb__naturezas
         description: >

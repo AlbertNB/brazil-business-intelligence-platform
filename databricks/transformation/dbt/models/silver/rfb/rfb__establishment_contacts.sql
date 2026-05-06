@@ -18,7 +18,7 @@ with source as (
         trim(cast(_c25 as string))                                                          as fax_area_code,
         trim(cast(_c26 as string))                                                          as fax_number,
         trim(cast(_c27 as string))                                                          as email,
-        trim(cast(reference_month as string))                                               as reference_month,
+        trim(cast(_reference_month as string))                                               as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__estabelecimentos') }}
@@ -30,7 +30,7 @@ with source as (
 {{ latest_dedup(
     source_cte = 'source',
     partition_by = ['cnpj_id'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
@@ -42,7 +42,7 @@ select
     fax_area_code,
     fax_number,
     email,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup

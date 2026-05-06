@@ -33,7 +33,7 @@ with source as (
         {{ rfb_date('_c10') }}                                                              as activity_start_date,
         trim(cast(_c28 as string))                                                          as special_status,
         {{ rfb_date('_c29') }}                                                              as special_status_date,
-        trim(cast(reference_month as string))                                               as reference_month,
+        trim(cast(_reference_month as string))                                               as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__estabelecimentos') }}
@@ -45,7 +45,7 @@ with source as (
 {{ latest_dedup(
     source_cte = 'source',
     partition_by = ['cnpj_id'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
@@ -63,7 +63,7 @@ select
     activity_start_date,
     special_status,
     special_status_date,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup

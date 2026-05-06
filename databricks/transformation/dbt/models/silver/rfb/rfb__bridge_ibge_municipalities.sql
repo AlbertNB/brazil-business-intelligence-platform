@@ -18,8 +18,8 @@ rfb_establishments_latest as (
         trim(cast(_c19 as string)) as state_abbreviation,
         trim(cast(_c20 as string)) as municipality_code
     from {{ source('bronze', 'rfb__estabelecimentos') }}
-    where reference_month = (
-        select max(reference_month)
+    where _reference_month = (
+        select max(_reference_month)
         from {{ source('bronze', 'rfb__estabelecimentos') }}
     )
       and _c19 is not null
@@ -33,8 +33,8 @@ rfb_municipalities_latest as (
         trim(cast(_c0 as string)) as municipality_code,
         trim(cast(_c1 as string)) as municipality_name
     from {{ source('bronze', 'rfb__municipios') }}
-    where reference_month = (
-        select max(reference_month)
+    where _reference_month = (
+        select max(_reference_month)
         from {{ source('bronze', 'rfb__municipios') }}
     )
       and _c0 is not null

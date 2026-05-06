@@ -7,7 +7,7 @@ with base as (
     select
         trim(cast(_c0 as string))           as registration_status_reason_code,
         trim(cast(_c1 as string))           as registration_status_reason_description,
-        trim(cast(reference_month as string)) as reference_month,
+        trim(cast(_reference_month as string)) as _reference_month,
         _ingestion_ts
 
     from {{ source('bronze', 'rfb__motivos') }}
@@ -18,13 +18,13 @@ with base as (
 {{ latest_dedup(
     source_cte = 'base',
     partition_by = ['registration_status_reason_code'],
-    extraction_column = 'reference_month'
+    extraction_column = '_reference_month'
 ) }}
 
 select
     registration_status_reason_code,
     registration_status_reason_description,
-    reference_month,
+    _reference_month,
     _ingestion_ts
 
 from dedup
