@@ -124,7 +124,7 @@ class IbgeExtractor:
         extraction_ts: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Run extraction for the configured data streams."""
-        streams = streams or ["estados", "municipios", "resultados"]
+        streams = streams or ["estados", "municipios", "resultados", "cnaes", "geolocation"]
         extraction_ts = extraction_ts or utc_now_iso()
 
         results: Dict[str, Any] = {}
