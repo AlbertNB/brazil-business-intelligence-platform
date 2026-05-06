@@ -5,8 +5,8 @@
 with base as (
 
     select
-        trim(cast(id as string)) as cnae_id,
-        trim(cast(descricao as string)) as cnae_description,
+        trim(cast(id as string)) as economic_activity_id,
+        trim(cast(descricao as string)) as economic_activity_description,
 
         from_json(
             cast(classe as string),
@@ -42,12 +42,12 @@ with base as (
 
 {{ latest_dedup(
     source_cte = "base",
-    partition_by = ["cnae_id"]
+    partition_by = ["economic_activity_id"]
 ) }}
 
 select
-    cnae_id,
-    cnae_description,
+    economic_activity_id,
+    economic_activity_description,
 
     trim(class_struct.id)                                as class_id,
     trim(class_struct.descricao)                         as class_description,
@@ -62,8 +62,8 @@ select
     trim(class_struct.grupo.divisao.secao.id)            as section_id,
     trim(class_struct.grupo.divisao.secao.descricao)     as section_description,
 
-    activities as cnae_activities,
-    notes as cnae_notes,
+    activities as economic_activity_details,
+    notes as economic_activity_notes,
 
     _ingestion_ts,
     _load_ts

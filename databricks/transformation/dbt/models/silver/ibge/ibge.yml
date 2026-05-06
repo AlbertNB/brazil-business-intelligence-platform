@@ -112,8 +112,8 @@ models:
         description: "Timestamp when this model row was loaded."
         tests: [not_null]
 
-  - name: ibge__cnaes
-    description: "Curated CNAE subclasses dataset from IBGE (silver layer), with full hierarchy flattened: subclass → class → group → division → section."
+  - name: ibge__economic_activities
+    description: "Curated CNAE economic activity subclasses from IBGE (silver layer), with full hierarchy flattened: subclass → class → group → division → section."
     columns:
       - name: section_id
         description: "CNAE section identifier."
@@ -139,17 +139,17 @@ models:
       - name: class_description
         description: "CNAE class description."
         tests: [not_null]
-      - name: cnae_id
+      - name: economic_activity_id
         description: "CNAE subclass identifier (natural key)."
         tests: [not_null, unique]
-      - name: cnae_description
+      - name: economic_activity_description
         description: "CNAE subclass description."
         tests: [not_null]
       - name: class_notes
         description: "Array of notes associated with the CNAE class."
-      - name: cnae_activities
+      - name: economic_activity_details
         description: "Array of CNAE subclass activity descriptions."
-      - name: cnae_notes
+      - name: economic_activity_notes
         description: "Array of notes associated with the CNAE subclass."
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
