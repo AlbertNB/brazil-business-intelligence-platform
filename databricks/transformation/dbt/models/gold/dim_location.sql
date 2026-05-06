@@ -192,7 +192,7 @@ unioned as (
 final as (
 
     select
-        {{ generate_sk(['location_nk']) }} as dim_location_id,
+        {{ generate_sk(['location_nk']) }} as location_sk,
 
         location_nk,
         location_name,

@@ -8,9 +8,8 @@ with source as (
         trim(cast(geo_level as string))   as location_type,
         trim(cast(type as string))        as geojson_type,
         cast(features as string)          as features_str,
-        cast(_extraction as timestamp)    as _extraction,
+        cast(_extraction_ts as timestamp)    as _extraction_ts,
         cast(_ingestion_ts as timestamp)  as _ingestion_ts,
-        _source_file,
         current_timestamp()               as _load_ts
 
     from {{ source('bronze', 'ibge__geolocation') }}
@@ -49,9 +48,8 @@ base as (
             f -> to_json(f.geometry)
         ) as geom_multipolygon_jsons,
 
-        _extraction,
+        _extraction_ts,
         _ingestion_ts,
-        _source_file,
         _load_ts
 
     from source
@@ -68,9 +66,8 @@ exploded as (
             when 'Polygon'      then b.geom_polygon_jsons[feature_position]
             when 'MultiPolygon' then b.geom_multipolygon_jsons[feature_position]
         end as geom_json,
-        b._extraction,
+        b._extraction_ts,
         b._ingestion_ts,
-        b._source_file,
         b._load_ts
 
     from base b

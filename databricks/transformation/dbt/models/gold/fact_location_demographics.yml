@@ -5,9 +5,9 @@ models:
     description: "Gold fact table for population, territorial area, and demographic density by location and year."
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns: [dim_location_id, year]
+          combination_of_columns: [location_sk, year]
     columns:
-      - name: dim_location_id
+      - name: location_sk
         description: "Surrogate key of the related location dimension (dim_location)."
         tests: [not_null]
 

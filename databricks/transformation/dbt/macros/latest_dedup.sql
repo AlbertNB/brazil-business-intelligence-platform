@@ -1,7 +1,7 @@
 {% macro latest_dedup(
     source_cte,
     partition_by,
-    extraction_column = "_extraction",
+    extraction_column = "_extraction_ts",
     use_latest_only_override = none
 ) %}
 
