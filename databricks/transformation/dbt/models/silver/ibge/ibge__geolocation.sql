@@ -87,6 +87,7 @@ normalized as (
 
         trim(feature_item.properties.codarea)  as location_id,
 
+        _extraction_ts,
         _ingestion_ts,
         _load_ts
 
