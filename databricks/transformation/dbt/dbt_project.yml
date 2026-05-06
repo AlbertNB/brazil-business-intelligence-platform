@@ -39,6 +39,6 @@ models:
 seeds:
   datalake:
     +schema: silver
+    +tags: ["silver"]
     ibge:
-      +schema: silver
       +tags: ["ibge"]
