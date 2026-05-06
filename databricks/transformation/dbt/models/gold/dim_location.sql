@@ -1,6 +1,5 @@
 {{ config(
-    materialized = "incremental",
-    unique_key = "location_nk",
+    materialized = "table",
     tags = ["dim", "location"]
 ) }}
 
@@ -32,7 +31,7 @@ br_municipalities as (
     select
         cast(municipality_id as string) as location_nk,
         municipality_name as location_name,
-        'city' as location_type,
+        'municipality' as location_type,
         cast(municipality_id as bigint) as ibge_id,
         cast(municipality_id as string) as ibge_code,
 
@@ -182,13 +181,6 @@ unioned as (
 
 ),
 
-{{ latest_dedup(
-    source_cte = "unioned",
-    partition_by = ["location_nk"],
-    extraction_column = "_ingestion_ts",
-    use_latest_only_override = false
-) }},
-
 final as (
 
     select
@@ -221,10 +213,8 @@ final as (
         _ingestion_ts,
         current_timestamp() as _updated_at
 
-    from dedup
+    from unioned
 )
 
 select *
 from final
-where {{ incremental_statement() }}
-;
