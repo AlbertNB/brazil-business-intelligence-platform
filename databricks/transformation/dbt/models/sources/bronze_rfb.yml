@@ -60,3 +60,8 @@ sources:
         description: >
           Reference table of registration status reasons (motivos de situação cadastral) from RFB.
           Maps a numeric code to its official description.
+
+      - name: rfb__cnaes
+        description: >
+          Reference table of CNAE economic activity codes from RFB.
+          Maps a numeric code to the official activity description.
