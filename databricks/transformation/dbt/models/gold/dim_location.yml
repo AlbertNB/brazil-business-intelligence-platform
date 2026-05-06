@@ -4,7 +4,7 @@ models:
   - name: dim_location
     description: "SCD1 location dimension for Brazilian IBGE geographies, unifying states and municipalities under a single natural location key."
     columns:
-      - name: dim_location_id
+      - name: location_sk
         description: "Deterministic surrogate key generated from location_nk."
         tests: [not_null, unique]
 

@@ -1,6 +1,6 @@
 {{ config(
     materialized = "incremental",
-    unique_key = ["dim_location_id", "year"],
+    unique_key = ["location_sk", "year"],
     tags = ["fact", "demographics"]
 ) }}
 
@@ -22,7 +22,7 @@ scoped as (
 
     -- Keep only valid locations present in the location dimension
     select
-        d.dim_location_id,
+        d.location_sk,
         b.location_id,
         b.year,
         b.indicator_id,
@@ -37,7 +37,7 @@ scoped as (
 census_population as (
 
     select
-        dim_location_id,
+        location_sk,
         location_id,
         year,
         metric_value as population_census
@@ -49,7 +49,7 @@ census_population as (
 estimated_population as (
 
     select
-        dim_location_id,
+        location_sk,
         location_id,
         year,
         metric_value as population_estimated
@@ -60,41 +60,41 @@ estimated_population as (
 
 population_years as (
 
-    select dim_location_id, location_id, year from census_population
+    select location_sk, location_id, year from census_population
     union
-    select dim_location_id, location_id, year from estimated_population
+    select location_sk, location_id, year from estimated_population
 
 ),
 
 area_by_year as (
 
     select
-        dim_location_id,
+        location_sk,
         location_id,
         year,
         max(metric_value) as area_km2
     from scoped
     where indicator_id in ('29167', '48980')
-    group by dim_location_id, location_id, year
+    group by location_sk, location_id, year
 
 ),
 
 latest_ingestion as (
 
     select
-        dim_location_id,
+        location_sk,
         location_id,
         year,
         max(_ingestion_ts) as _ingestion_ts
     from scoped
-    group by dim_location_id, location_id, year
+    group by location_sk, location_id, year
 
 ),
 
 final as (
 
     select
-        py.dim_location_id,
+        py.location_sk,
         py.location_id,
         py.year,
         cp.population_census,
@@ -123,26 +123,26 @@ final as (
         li._ingestion_ts
     from population_years py
     left join census_population cp
-        on py.dim_location_id = cp.dim_location_id
+        on py.location_sk = cp.location_sk
        and py.location_id = cp.location_id
        and py.year = cp.year
     left join estimated_population ep
-        on py.dim_location_id = ep.dim_location_id
+        on py.location_sk = ep.location_sk
        and py.location_id = ep.location_id
        and py.year = ep.year
     left join area_by_year ay
-        on py.dim_location_id = ay.dim_location_id
+        on py.location_sk = ay.location_sk
        and py.location_id = ay.location_id
        and py.year = ay.year
     left join latest_ingestion li
-        on py.dim_location_id = li.dim_location_id
+        on py.location_sk = li.location_sk
        and py.location_id = li.location_id
        and py.year = li.year
 
 )
 
 select
-    dim_location_id,
+    location_sk,
     location_id,
     year,
     population_census,
@@ -153,5 +153,6 @@ select
     density_census,
     density_estimated,
     density_preferred,
-    _ingestion_ts
+    _ingestion_ts,
+    current_timestamp() as _updated_at
 from final

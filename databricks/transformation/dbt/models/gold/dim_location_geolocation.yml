@@ -11,7 +11,7 @@ models:
           - unique
           - relationships:
               to: ref('dim_location')
-              field: dim_location_id
+              field: location_sk
 
       - name: location_nk
         description: "Natural key — IBGE area code extracted from feature properties (codarea). Foreign key to dim_location."

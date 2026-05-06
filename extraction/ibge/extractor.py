@@ -30,28 +30,28 @@ class IbgeExtractor:
     1. **estados** - Brazilian states metadata
        - Endpoint: GET /api/v1/localidades/estados
        - Returns: List of all 27 states with region information
-       - Output: s3://bucket/ibge/estados/_extraction={TIMESTAMP}/estados_{TIMESTAMP}.json
+    - Output: s3://bucket/ibge/estados/_extraction_ts={TIMESTAMP}/estados_{TIMESTAMP}.json
 
     2. **municipios** - Brazilian municipalities metadata
        - Endpoint: GET /api/v1/localidades/municipios
        - Returns: List of all ~5,570 municipalities with hierarchical location data
-       - Output: s3://bucket/ibge/municipios/_extraction={TIMESTAMP}/municipios_{TIMESTAMP}.json
+    - Output: s3://bucket/ibge/municipios/_extraction_ts={TIMESTAMP}/municipios_{TIMESTAMP}.json
 
     3. **resultados** - Socioeconomic indicators (population, area)
        - Endpoints: GET /api/v1/pesquisas/indicadores/{IDS}/resultados/{LOCATION_ID}
        - Indicators: Population (2022 census), Estimated population (2025), Area
        - Requests: ~5,600+ (one per municipality + one per state)
-       - Output: s3://bucket/ibge/resultados/_extraction={TIMESTAMP}/resultados_{TIMESTAMP}_batch_{N}.json
+    - Output: s3://bucket/ibge/resultados/_extraction_ts={TIMESTAMP}/resultados_{TIMESTAMP}_batch_{N}.json
 
     4. **cnaes** - CNAE subclasses
        - Endpoint: GET /api/v2/cnae/subclasses
        - Returns: Full list of CNAE subclasses with codes and descriptions
-       - Output: s3://bucket/ibge/cnaes/_extraction={TIMESTAMP}/cnaes_{TIMESTAMP}.json
+    - Output: s3://bucket/ibge/cnaes/_extraction_ts={TIMESTAMP}/cnaes_{TIMESTAMP}.json
 
      5. **geolocation** - GeoJSON geometry files
          - Endpoint: GET /api/v4/malhas/paises/BR (with different intrarregiao params)
          - Returns: GeoJSON geometries for country, all states and all municipalities
-         - Output: s3://bucket/ibge/geolocation/_extraction={TIMESTAMP}/geo_level={TYPE}/geolocation_{TIMESTAMP}_{TYPE}.geojson
+         - Output: s3://bucket/ibge/geolocation/_extraction_ts={TIMESTAMP}/geo_level={TYPE}/geolocation_{TIMESTAMP}_{TYPE}.geojson
 
     Usage:
         extractor = IbgeExtractor(
@@ -147,7 +147,7 @@ class IbgeExtractor:
         key = s3_join(
             self.s3_base_prefix,
             stream_name,
-            f"_extraction={extraction_ts}",
+            f"_extraction_ts={extraction_ts}",
             f"{stream_name}_{extraction_ts}.json",
         )
         return f"s3://{self.s3_bucket}/{key}"
@@ -318,7 +318,7 @@ class IbgeExtractor:
         key = s3_join(
             self.s3_base_prefix,
             "geolocation",
-            f"_extraction={extraction_ts}",
+            f"_extraction_ts={extraction_ts}",
             f"geo_level={geo_level}",
             f"geolocation_{extraction_ts}_{geo_level}.geojson",
         )

@@ -29,7 +29,7 @@ with base as (
         trim(cast(`regiao-intermediaria-nome` as string)) as intermediate_region_name,
 
         -- metadata
-        cast(_extraction as timestamp)            as _extraction,
+        cast(_extraction_ts as timestamp)            as _extraction_ts,
         cast(_ingestion_ts as timestamp)          as _ingestion_ts,
         current_timestamp()                       as _load_ts
 

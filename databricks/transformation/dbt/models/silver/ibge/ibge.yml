@@ -108,8 +108,8 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
-      - name: _source_file
-        description: "Source file path from Auto Loader metadata."
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
         tests: [not_null]
 
   - name: ibge__cnaes

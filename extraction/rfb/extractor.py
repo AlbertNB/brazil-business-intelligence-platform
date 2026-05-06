@@ -256,7 +256,7 @@ class RfbCnpjExtractor:
         return cls._normalize_index(match.group(1))
 
     def _list_existing_indexes_and_streams(self, reference_month: str) -> Tuple[set[str], set[str]]:
-        marker = f"reference_month={reference_month}/"
+        marker = f"_reference_month={reference_month}/"
         existing_indexes: set[str] = set()
         existing_streams: set[str] = set()
 
@@ -425,7 +425,7 @@ class RfbCnpjExtractor:
         target_key = s3_join(
             self.s3_base_prefix,
             task.stream_name,
-            f"reference_month={reference_month}",
+            f"_reference_month={reference_month}",
             task.local_gz_path.name,
         )
 
@@ -683,7 +683,7 @@ class RfbCnpjExtractor:
             files_uploaded = sum(len(files) for files in uploaded_by_stream.values())
 
             return {
-                "reference_month": reference_month,
+                "_reference_month": reference_month,
                 "competence_url": competence_url,
                 "extraction_ts": extraction_ts,
                 "zip_files_found": len(download_tasks) + len(skipped_zip_names),
