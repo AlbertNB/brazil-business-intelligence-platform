@@ -79,7 +79,7 @@ class JsonBatchBuffer:
         key = s3_join(
             self.s3_base_prefix,
             self.stream_name,
-            f"_extraction={self.extraction_ts}",
+            f"_extraction_ts={self.extraction_ts}",
             file_name,
         )
         return f"s3://{self.s3_bucket}/{key}"

@@ -108,6 +108,98 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
-      - name: _source_file
-        description: "Source file path from Auto Loader metadata."
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
+
+  - name: ibge__cnaes
+    description: "Curated CNAE subclasses dataset from IBGE (silver layer), with full hierarchy flattened: subclass → class → group → division → section."
+    columns:
+      - name: section_id
+        description: "CNAE section identifier."
+        tests: [not_null]
+      - name: section_description
+        description: "CNAE section description."
+        tests: [not_null]
+      - name: division_id
+        description: "CNAE division identifier."
+        tests: [not_null]
+      - name: division_description
+        description: "CNAE division description."
+        tests: [not_null]
+      - name: group_id
+        description: "CNAE group identifier."
+        tests: [not_null]
+      - name: group_description
+        description: "CNAE group description."
+        tests: [not_null]
+      - name: class_id
+        description: "CNAE class identifier."
+        tests: [not_null]
+      - name: class_description
+        description: "CNAE class description."
+        tests: [not_null]
+      - name: cnae_id
+        description: "CNAE subclass identifier (natural key)."
+        tests: [not_null, unique]
+      - name: cnae_description
+        description: "CNAE subclass description."
+        tests: [not_null]
+      - name: class_notes
+        description: "Array of notes associated with the CNAE class."
+      - name: cnae_activities
+        description: "Array of CNAE subclass activity descriptions."
+      - name: cnae_notes
+        description: "Array of notes associated with the CNAE subclass."
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
+
+  - name: ibge__geolocation
+    description: "Curated IBGE geospatial GeoJSON dataset (silver layer), with feature-level extraction from features JSON and deduplication by location_type + location_id."
+    columns:
+      - name: location_type
+        description: "Geographic granularity of the GeoJSON payload (municipality, state, country)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['municipality', 'state', 'country']
+      - name: geojson_type
+        description: "GeoJSON top-level type (expected FeatureCollection)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['FeatureCollection']
+      - name: feature_type
+        description: "GeoJSON feature type for each exploded feature (expected Feature)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Feature']
+      - name: geometry_type
+        description: "Geometry type (Polygon or MultiPolygon)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Polygon', 'MultiPolygon']
+      - name: geometry_geojson
+        description: "Complete GeoJSON geometry object serialized as JSON string, including coordinates."
+        tests: [not_null]
+      - name: geometry_source_format
+        description: "Source format of the geometry data (always 'geojson')."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['geojson']
+      - name: location_id
+        description: "IBGE area code extracted from feature properties."
+        tests: [not_null, unique]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
         tests: [not_null]

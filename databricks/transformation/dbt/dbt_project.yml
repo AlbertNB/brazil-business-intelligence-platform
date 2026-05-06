@@ -43,7 +43,6 @@ seeds:
     +schema: silver
     +tags: ["silver"]
     ibge:
-      +schema: silver
       +tags: ["ibge"]
     rfb:
       +schema: silver

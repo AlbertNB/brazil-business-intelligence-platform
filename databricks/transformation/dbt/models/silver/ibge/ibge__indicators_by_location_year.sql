@@ -6,14 +6,14 @@
 with source as (
 
     select
-        cast(_extraction as timestamp) as _extraction,
+        cast(_extraction_ts as timestamp) as _extraction_ts,
         cast(location_id as string) as location_id,
         from_json(
             cast(payload as string),
             'array<struct<id:bigint,res:array<struct<localidade:string,res:map<string,string>,notas:map<string,string>>>>>'
         ) as payload_items,
         cast(_ingestion_ts as timestamp) as _ingestion_ts,
-        _source_file
+        current_timestamp() as _load_ts
     from {{ source('bronze', 'ibge__resultados') }}
     where payload is not null
       and {{ incremental_statement() }}
@@ -23,10 +23,10 @@ with source as (
 indicator_rows as (
 
     select
-        s._extraction,
+        s._extraction_ts,
         s.location_id,
         s._ingestion_ts,
-        s._source_file,
+        s._load_ts,
         indicator.id as indicator_id,
         indicator.res as indicator_results
     from source s
@@ -38,10 +38,10 @@ indicator_rows as (
 location_rows as (
 
     select
-        ir._extraction,
+        ir._extraction_ts,
         ir.location_id,
         ir._ingestion_ts,
-        ir._source_file,
+        ir._load_ts,
         cast(ir.indicator_id as string) as indicator_id,
         result.localidade as payload_location_id,
         result.res as year_value_map,
@@ -54,10 +54,10 @@ location_rows as (
 year_value_rows as (
 
     select
-        lr._extraction,
+        lr._extraction_ts,
         lr.location_id,
         lr._ingestion_ts,
-        lr._source_file,
+        lr._load_ts,
         lr.indicator_id,
         lr.payload_location_id,
         reference_year,
@@ -76,9 +76,9 @@ base as (
         indicator_id,
 
         try_cast(nullif(trim(replace(raw_metric_value, ',', '.')), '') as decimal(18,3)) as metric_value,
-        _extraction,
+        _extraction_ts,
         _ingestion_ts,
-        _source_file,
+        _load_ts,
         payload_location_id
 
     from year_value_rows
@@ -97,5 +97,5 @@ select
     indicator_id,
     metric_value,
     _ingestion_ts,
-    _source_file
+    _load_ts
 from dedup

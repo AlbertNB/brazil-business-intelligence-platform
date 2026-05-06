@@ -1,10 +1,15 @@
 {% macro latest_dedup(
     source_cte,
     partition_by,
-    extraction_column = "_extraction"
+    extraction_column = "_extraction_ts",
+    use_latest_only_override = none
 ) %}
 
-{% set use_latest_only = not is_incremental() %}
+{% if use_latest_only_override is none %}
+    {% set use_latest_only = not is_incremental() %}
+{% else %}
+    {% set use_latest_only = use_latest_only_override %}
+{% endif %}
 
 {% if use_latest_only %}
 latest as (

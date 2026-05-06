@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: dim_location_geolocation
+    description: "Geospatial geometry dimension (gold layer). One row per IBGE geographic area with its full GeoJSON geometry, sourced from ibge__geolocation."
+    columns:
+      - name: location_sk
+        description: "Deterministic surrogate key generated from location_nk."
+        tests:
+          - not_null
+          - unique
+          - relationships:
+              to: ref('dim_location')
+              field: location_sk
+
+      - name: location_nk
+        description: "Natural key — IBGE area code extracted from feature properties (codarea). Foreign key to dim_location."
+        tests: [not_null, unique]
+
+      - name: location_type
+        description: "Geographic granularity of the source GeoJSON payload (municipality, state, country)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['municipality', 'state', 'country']
+
+      - name: geojson_type
+        description: "GeoJSON top-level type (expected FeatureCollection)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['FeatureCollection']
+
+      - name: feature_type
+        description: "GeoJSON feature type for each exploded feature (expected Feature)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Feature']
+
+      - name: geometry_type
+        description: "Geometry type of the geographic shape."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Polygon', 'MultiPolygon']
+
+      - name: geometry_geojson
+        description: "Complete GeoJSON geometry object serialized as a JSON string, including coordinates."
+        tests: [not_null]
+
+      - name: geometry_source_format
+        description: "Source format of the geometry data (always 'geojson')."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['geoJSON']
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp propagated from the silver layer."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]
