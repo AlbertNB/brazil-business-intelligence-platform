@@ -12,8 +12,7 @@ with source as (
         feature_type,
         geometry_type,
         geometry_geojson,
-        geometry_source_format,
-        _ingestion_ts
+        geometry_source_format
 
     from {{ ref('ibge__geolocation') }}
 
@@ -32,7 +31,6 @@ final as (
         geometry_geojson,
         geometry_source_format,
 
-        _ingestion_ts,
         current_timestamp() as _updated_at
 
     from source

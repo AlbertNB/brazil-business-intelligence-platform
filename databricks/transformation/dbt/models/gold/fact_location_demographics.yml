@@ -11,8 +11,8 @@ models:
         description: "Surrogate key of the related location dimension (dim_location)."
         tests: [not_null]
 
-      - name: location_id
-        description: "Natural IBGE location identifier as string (state_id or municipality_id), kept for traceability."
+      - name: location_nk
+        description: "Natural location key aligned with dim_location.location_nk, stored as the IBGE identifier in string format."
         tests: [not_null]
 
       - name: year
@@ -42,3 +42,11 @@ models:
 
       - name: density_preferred
         description: "Preferred density = population_preferred / area_km2."
+
+      - name: _extraction_ts
+        description: "Latest extraction timestamp among the source IBGE indicators for the same location and year."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this Gold row was last written."
+        tests: [not_null]
