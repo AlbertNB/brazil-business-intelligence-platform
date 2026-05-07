@@ -16,7 +16,7 @@ with source as (
         current_timestamp() as _load_ts
     from {{ source('bronze', 'ibge__resultados') }}
     where payload is not null
-      and {{ incremental_statement() }}
+      and {{ incremental_statement('_extraction_ts') }}
 
 ),
 
@@ -67,6 +67,11 @@ year_value_rows as (
 
 ),
 
+{{ latest_dedup(
+    source_cte = 'year_value_rows',
+    partition_by = ['location_id', 'indicator_id', 'reference_year']
+) }},
+
 base as (
 
     select
@@ -81,21 +86,17 @@ base as (
         _load_ts,
         payload_location_id
 
-    from year_value_rows
+    from dedup
     where try_cast(nullif(trim(replace(raw_metric_value, ',', '.')), '') as decimal(18,3)) is not null
 
-),
-
-{{ latest_dedup(
-    source_cte = 'base',
-    partition_by = ['location_id', 'indicator_id', 'reference_year']
-) }}
+)
 
 select
     location_id,
     reference_year,
     indicator_id,
     metric_value,
+    _extraction_ts,
     _ingestion_ts,
     _load_ts
-from dedup
+from base
