@@ -19,7 +19,7 @@ with source as (
         trim(cast(_c16 as string))                                                          as address_complement,
         trim(cast(_c17 as string))                                                          as neighborhood,
         trim(cast(_c18 as string))                                                          as postal_code,
-        trim(cast(_c19 as string))                                                          as state,
+        trim(cast(_c19 as string))                                                          as state_abbreviation,
         trim(cast(_c20 as string))                                                          as municipality_code,
         trim(cast(_reference_month as string))                                               as _reference_month,
         _ingestion_ts
@@ -28,7 +28,7 @@ with source as (
     where _c0 is not null
             and {{ incremental_statement('_reference_month') }}
 
-),
+)
 
 select
     cnpj_id,
@@ -40,10 +40,10 @@ select
     address_complement,
     neighborhood,
     postal_code,
-    state,
+    state_abbreviation,
     municipality_code,
     _reference_month,
     _ingestion_ts,
     current_timestamp() as _load_ts
 
-from dedup
+from source

@@ -1,6 +1,6 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['cnpj_id', 'cnae_code', '_reference_month']
+    unique_key = ['cnpj_id', 'is_main_activity', 'cnae_code', '_reference_month']
 ) }}
 
 with source as (
@@ -55,7 +55,7 @@ activities as (
     union all
     select * from secondary_activities
 
-),
+)
 
 select
     cnpj_id,
@@ -65,6 +65,6 @@ select
     _ingestion_ts,
     current_timestamp() as _load_ts
 
-from dedup
+from activities
 where cnae_code is not null
   and cnae_code != ''

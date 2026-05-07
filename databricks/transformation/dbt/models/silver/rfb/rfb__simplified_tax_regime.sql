@@ -20,7 +20,7 @@ with source as (
     where _c0 is not null
             and {{ incremental_statement('_reference_month') }}
 
-),
+)
 
 select
     company_root_id,
@@ -34,4 +34,4 @@ select
     _ingestion_ts,
     current_timestamp() as _load_ts
 
-from dedup
+from source

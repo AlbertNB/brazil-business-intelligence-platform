@@ -192,7 +192,7 @@ models:
         description: "Neighborhood (bairro)."
       - name: postal_code
         description: "Brazilian postal code (CEP, 8 digits)."
-      - name: state
+      - name: state_abbreviation
         description: "State abbreviation (UF)."
         tests:
           - accepted_values:
@@ -266,13 +266,13 @@ models:
     description: >
       CNAE economic activity codes per establishment from RFB (silver layer).
       Maintains snapshot history by _reference_month.
-      One row per CNPJ + cnae_code + _reference_month combination (main and secondary activities exploded).
+      One row per CNPJ + is_main_activity + cnae_code + _reference_month combination (main and secondary activities exploded).
       FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
-            combination_of_columns: [cnpj_id, cnae_code, _reference_month]
+            combination_of_columns: [cnpj_id, is_main_activity, cnae_code, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(cnpj_id) = 14
@@ -287,7 +287,7 @@ models:
         data_tests:
           - not_null
       - name: is_main_activity
-        description: "True if this is the main CNAE activity; false if secondary."
+        description: "True if this is the main CNAE activity; false if secondary. Part of the snapshot composite key."
         tests: [not_null]
       - name: cnae_code
         description: "CNAE economic activity code. Part of the snapshot composite key."
