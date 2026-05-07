@@ -1,6 +1,6 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['company_root_id', 'partner_name', 'partner_document_id']
+    unique_key = ['company_root_id', 'partner_name', 'partner_document_id', '_reference_month']
 ) }}
 
 with source as (

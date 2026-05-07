@@ -7,17 +7,20 @@ models:
   - name: rfb__companies
     description: >
       Curated dataset of Brazilian companies (CNPJ raiz) from Receita Federal do Brasil (silver layer).
-      Deduplicated by company_root_id, merged incrementally.
+      Maintains snapshot history by _reference_month.
+      Deduplicated by company_root_id within each snapshot and merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [company_root_id, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(company_root_id) = 8
     columns:
       - name: company_root_id
-        description: "Company root CNPJ (8 digits). Natural key."
+        description: "Company root CNPJ (8 digits). Business key repeated across monthly snapshots."
         data_tests:
           - not_null
-          - unique
       - name: legal_name
         description: "Official company legal name (razão social)."
         tests: [not_null]
@@ -61,9 +64,13 @@ models:
   - name: rfb__establishment_core
     description: >
       Core establishment data (CNPJ completo) from RFB (silver layer).
-      Each row is one establishment identified by its full 14-digit CNPJ.
+      Maintains snapshot history by _reference_month.
+      Each row is one establishment snapshot identified by its full 14-digit CNPJ plus _reference_month.
       Merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(cnpj_id) = 14
@@ -83,10 +90,9 @@ models:
             expression: length(establishment_check_digit) = 2
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ (company_root_id + establishment_order + establishment_check_digit). Natural key."
+        description: "Full 14-digit CNPJ (company_root_id + establishment_order + establishment_check_digit). Business key repeated across monthly snapshots."
         data_tests:
           - not_null
-          - unique
       - name: company_root_id
         description: "Company root CNPJ (8 digits)."
         data_tests:
@@ -144,9 +150,13 @@ models:
   - name: rfb__establishment_addresses
     description: >
       Address data for each establishment (CNPJ completo) from RFB (silver layer).
-      One row per CNPJ. FK to rfb__establishment_core via cnpj.
+      Maintains snapshot history by _reference_month.
+      One row per CNPJ and _reference_month. FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(cnpj_id) = 14
@@ -157,10 +167,9 @@ models:
             severity: warn
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ. FK to rfb__establishment_core."
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Business key repeated across monthly snapshots."
         data_tests:
           - not_null
-          - unique
       - name: foreign_city_name
         description: "City name for foreign-based establishments."
       - name: country_code
@@ -209,9 +218,13 @@ models:
   - name: rfb__establishment_contacts
     description: >
       Contact information (phone, fax, email) for each establishment from RFB (silver layer).
-      One row per CNPJ. FK to rfb__establishment_core via cnpj.
+      Maintains snapshot history by _reference_month.
+      One row per CNPJ and _reference_month. FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(cnpj_id) = 14
@@ -222,10 +235,9 @@ models:
             severity: warn
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ. FK to rfb__establishment_core."
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Business key repeated across monthly snapshots."
         data_tests:
           - not_null
-          - unique
       - name: phone_area_code_1
         description: "Area code (DDD) for primary phone."
       - name: phone_number_1
@@ -253,10 +265,14 @@ models:
   - name: rfb__establishment_activities
     description: >
       CNAE economic activity codes per establishment from RFB (silver layer).
-      One row per CNPJ + cnae_code combination (main and secondary activities exploded).
+      Maintains snapshot history by _reference_month.
+      One row per CNPJ + cnae_code + _reference_month combination (main and secondary activities exploded).
       FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, cnae_code, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(cnpj_id) = 14
@@ -267,14 +283,14 @@ models:
             severity: warn
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Part of composite key."
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Part of the snapshot composite key."
         data_tests:
           - not_null
       - name: is_main_activity
         description: "True if this is the main CNAE activity; false if secondary."
         tests: [not_null]
       - name: cnae_code
-        description: "CNAE economic activity code. Part of composite key."
+        description: "CNAE economic activity code. Part of the snapshot composite key."
         tests: [not_null]
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
@@ -346,9 +362,13 @@ models:
   - name: rfb__partners
     description: >
       Curated dataset of company partners (quadro societário) from RFB (silver layer).
-      Composite key: (company_root_id, partner_name, partner_document_id).
+      Maintains snapshot history by _reference_month.
+      Composite key per snapshot: (company_root_id, partner_name, partner_document_id, _reference_month).
       Merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [company_root_id, partner_name, partner_document_id, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: partner_name is not null or partner_document_id is not null
@@ -357,7 +377,7 @@ models:
             expression: length(company_root_id) = 8
     columns:
       - name: company_root_id
-        description: "Company root CNPJ (8 digits). Part of composite key."
+        description: "Company root CNPJ (8 digits). Part of the snapshot composite key."
         data_tests:
           - not_null
       - name: partner_identifier_id
@@ -368,9 +388,9 @@ models:
       - name: partner_identifier_description
         description: "Partner identifier type label in uppercase (LEGAL_ENTITY, INDIVIDUAL, FOREIGNER)."
       - name: partner_name
-        description: "Partner name. Part of composite key."
+        description: "Partner name. Part of the snapshot composite key."
       - name: partner_document_id
-        description: "Partner document identifier (CPF/CNPJ, masked). Part of composite key."
+        description: "Partner document identifier (CPF/CNPJ, masked). Part of the snapshot composite key."
       - name: partner_qualification_code
         description: "Partner qualification code. FK to rfb__qualifications."
         tests:
@@ -421,17 +441,20 @@ models:
   - name: rfb__simplified_tax_regime
     description: >
       Curated dataset of Simples Nacional and MEI registration data from RFB (silver layer).
-      Deduplicated by company_root_id, merged incrementally.
+      Maintains snapshot history by _reference_month.
+      Deduplicated by company_root_id within each snapshot and merged incrementally.
     tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [company_root_id, _reference_month]
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(company_root_id) = 8
     columns:
       - name: company_root_id
-        description: "Company root CNPJ (8 digits). Natural key."
+        description: "Company root CNPJ (8 digits). Business key repeated across monthly snapshots."
         data_tests:
           - not_null
-          - unique
       - name: is_simples_nacional
         description: "Whether the company is opted into Simples Nacional (true/false)."
       - name: simples_nacional_option_date

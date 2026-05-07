@@ -1,6 +1,6 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['cnpj_id', 'cnae_code']
+    unique_key = ['cnpj_id', 'cnae_code', '_reference_month']
 ) }}
 
 with source as (
@@ -56,12 +56,6 @@ activities as (
     select * from secondary_activities
 
 ),
-
-{{ latest_dedup(
-    source_cte = 'activities',
-    partition_by = ['cnpj_id', 'cnae_code'],
-    extraction_column = '_reference_month'
-) }}
 
 select
     cnpj_id,

@@ -1,6 +1,6 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['company_root_id']
+    unique_key = ['company_root_id', '_reference_month']
 ) }}
 
 with source as (
@@ -21,12 +21,6 @@ with source as (
             and {{ incremental_statement('_reference_month') }}
 
 ),
-
-{{ latest_dedup(
-    source_cte = 'source',
-    partition_by = ['company_root_id'],
-    extraction_column = '_reference_month'
-) }}
 
 select
     company_root_id,
