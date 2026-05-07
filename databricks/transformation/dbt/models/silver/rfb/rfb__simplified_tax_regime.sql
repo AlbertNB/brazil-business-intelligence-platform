@@ -14,11 +14,12 @@ with source as (
         {{ rfb_date('_c5') }}                                               as mei_option_date,
         {{ rfb_date('_c6') }}                                               as mei_exclusion_date,
         trim(cast(_reference_month as string))                           as _reference_month,
-        _ingestion_ts
+        _ingestion_ts,
+        current_timestamp()                                              as _load_ts
 
     from {{ source('bronze', 'rfb__simples') }}
     where _c0 is not null
-      and {{ incremental_statement() }}
+            and {{ incremental_statement('_reference_month') }}
 
 ),
 
@@ -37,6 +38,7 @@ select
     mei_option_date,
     mei_exclusion_date,
     _reference_month,
-    _ingestion_ts
+    _ingestion_ts,
+    _load_ts
 
 from dedup

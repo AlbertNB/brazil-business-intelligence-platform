@@ -19,11 +19,12 @@ with source as (
         trim(cast(_c26 as string))                                                          as fax_number,
         trim(cast(_c27 as string))                                                          as email,
         trim(cast(_reference_month as string))                                               as _reference_month,
-        _ingestion_ts
+        _ingestion_ts,
+        current_timestamp()                                                                  as _load_ts
 
     from {{ source('bronze', 'rfb__estabelecimentos') }}
     where _c0 is not null
-      and {{ incremental_statement() }}
+            and {{ incremental_statement('_reference_month') }}
 
 ),
 
@@ -43,6 +44,7 @@ select
     fax_number,
     email,
     _reference_month,
-    _ingestion_ts
+    _ingestion_ts,
+    _load_ts
 
 from dedup

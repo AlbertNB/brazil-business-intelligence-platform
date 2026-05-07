@@ -20,11 +20,12 @@ with source as (
         end                                                                         as company_size_description,
         trim(cast(_c6 as string))                                                   as federative_entity_responsible,
         trim(cast(_reference_month as string))                                       as _reference_month,
-        _ingestion_ts
+        _ingestion_ts,
+        current_timestamp()                                                          as _load_ts
 
     from {{ source('bronze', 'rfb__empresas') }}
     where _c0 is not null
-      and {{ incremental_statement() }}
+            and {{ incremental_statement('_reference_month') }}
 
 ),
 
@@ -44,6 +45,7 @@ select
     company_size_description,
     federative_entity_responsible,
     _reference_month,
-    _ingestion_ts
+    _ingestion_ts,
+    _load_ts
 
 from dedup

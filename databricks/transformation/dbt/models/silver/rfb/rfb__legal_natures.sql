@@ -8,7 +8,8 @@ with base as (
         trim(cast(_c0 as string))           as legal_nature_code,
         trim(cast(_c1 as string))           as legal_nature_description,
         trim(cast(_reference_month as string)) as _reference_month,
-        _ingestion_ts
+        _ingestion_ts,
+        current_timestamp() as _load_ts
 
     from {{ source('bronze', 'rfb__naturezas') }}
     where _c0 is not null
@@ -25,6 +26,7 @@ select
     legal_nature_code,
     legal_nature_description,
     _reference_month,
-    _ingestion_ts
+    _ingestion_ts,
+    _load_ts
 
 from dedup

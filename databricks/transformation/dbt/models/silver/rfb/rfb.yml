@@ -54,6 +54,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__establishment_core
     description: >
@@ -134,6 +137,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__establishment_addresses
     description: >
@@ -196,6 +202,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__establishment_contacts
     description: >
@@ -237,6 +246,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__establishment_activities
     description: >
@@ -269,6 +281,9 @@ models:
         tests: [not_null]
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
         tests: [not_null]
 
   - name: rfb__bridge_ibge_municipalities
@@ -318,6 +333,15 @@ models:
           - accepted_values:
               arguments:
                 values: ['MATCHED', 'UNMATCHED']
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__partners
     description: >
@@ -390,6 +414,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__simplified_tax_regime
     description: >
@@ -423,6 +450,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   # ── Reference / lookup tables ─────────────────────────────────────────────
 
@@ -443,6 +473,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__qualifications
     description: >
@@ -460,6 +493,9 @@ models:
         tests: [not_null]
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
         tests: [not_null]
 
   - name: rfb__municipalities
@@ -479,6 +515,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__countries
     description: >
@@ -497,6 +536,9 @@ models:
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
 
   - name: rfb__registration_status_reasons
     description: >
@@ -514,4 +556,28 @@ models:
         tests: [not_null]
       - name: _ingestion_ts
         description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
+
+  - name: rfb__economic_activities
+    description: >
+      Reference table of CNAE economic activities as coded by RFB (silver layer).
+      Full refresh. Deduplicated by economic_activity_code.
+    columns:
+      - name: economic_activity_code
+        description: "RFB economic activity code. Natural key."
+        tests: [not_null, unique]
+      - name: economic_activity_description
+        description: "Economic activity description as used in the CNPJ dataset."
+        tests: [not_null]
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
         tests: [not_null]

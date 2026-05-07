@@ -7,7 +7,8 @@ with overrides as (
     select
         trim(cast(state_abbreviation as string)) as state_abbreviation,
         trim(cast(rfb_municipality_name_norm as string)) as rfb_municipality_name_norm,
-        trim(cast(ibge_municipality_name_norm as string)) as ibge_municipality_name_norm
+        trim(cast(ibge_municipality_name_norm as string)) as ibge_municipality_name_norm,
+        current_timestamp() as _load_ts
     from {{ ref('rfb__bridge_ibge_municipalities_overrides') }}
 
 ),
@@ -16,7 +17,8 @@ rfb_establishments_latest as (
 
     select
         trim(cast(_c19 as string)) as state_abbreviation,
-        trim(cast(_c20 as string)) as municipality_code
+        trim(cast(_c20 as string)) as municipality_code,
+        trim(cast(_reference_month as string)) as _reference_month
     from {{ source('bronze', 'rfb__estabelecimentos') }}
     where _reference_month = (
         select max(_reference_month)
@@ -31,7 +33,9 @@ rfb_municipalities_latest as (
 
     select
         trim(cast(_c0 as string)) as municipality_code,
-        trim(cast(_c1 as string)) as municipality_name
+        trim(cast(_c1 as string)) as municipality_name,
+        trim(cast(_reference_month as string)) as _reference_month,
+        _ingestion_ts
     from {{ source('bronze', 'rfb__municipios') }}
     where _reference_month = (
         select max(_reference_month)
@@ -47,6 +51,9 @@ rfb as (
         e.state_abbreviation as source_state_abbreviation,
         e.municipality_code as source_municipality_code,
         m.municipality_name as source_municipality_name,
+        m._reference_month as _reference_month,
+        m._ingestion_ts as _ingestion_ts,
+        current_timestamp() as _load_ts,
         {{ rfb_normalize_municipality_name('m.municipality_name') }} as municipality_name_norm
     from rfb_establishments_latest e
     left join rfb_municipalities_latest m
@@ -73,6 +80,9 @@ rfb_with_override as (
         rfb.source_state_abbreviation,
         rfb.source_municipality_code,
         rfb.source_municipality_name,
+        rfb._reference_month,
+        rfb._ingestion_ts,
+        rfb._load_ts,
         overrides.ibge_municipality_name_norm is not null as is_override_applied,
         coalesce(
             overrides.ibge_municipality_name_norm,
@@ -97,7 +107,10 @@ select
     case
         when ibge.ibge_municipality_id is null then 'UNMATCHED'
         else 'MATCHED'
-    end as match_status
+    end as match_status,
+    rfb._reference_month,
+    rfb._ingestion_ts,
+    rfb._load_ts
 from rfb_with_override rfb
 left join ibge
     on rfb.municipality_name_norm_for_match = ibge.municipality_name_norm
