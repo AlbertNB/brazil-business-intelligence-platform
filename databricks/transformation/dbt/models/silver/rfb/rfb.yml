@@ -55,7 +55,7 @@ models:
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
 
-  - name: rfb__establishments
+  - name: rfb__establishment_core
     description: >
       Core establishment data (CNPJ completo) from RFB (silver layer).
       Each row is one establishment identified by its full 14-digit CNPJ.
@@ -138,7 +138,7 @@ models:
   - name: rfb__establishment_addresses
     description: >
       Address data for each establishment (CNPJ completo) from RFB (silver layer).
-      One row per CNPJ. FK to rfb__establishments via cnpj.
+      One row per CNPJ. FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
       - dbt_utils.expression_is_true:
@@ -151,7 +151,7 @@ models:
             severity: warn
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ. FK to rfb__establishments."
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core."
         data_tests:
           - not_null
           - unique
@@ -200,7 +200,7 @@ models:
   - name: rfb__establishment_contacts
     description: >
       Contact information (phone, fax, email) for each establishment from RFB (silver layer).
-      One row per CNPJ. FK to rfb__establishments via cnpj.
+      One row per CNPJ. FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
       - dbt_utils.expression_is_true:
@@ -213,7 +213,7 @@ models:
             severity: warn
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ. FK to rfb__establishments."
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core."
         data_tests:
           - not_null
           - unique
@@ -242,7 +242,7 @@ models:
     description: >
       CNAE economic activity codes per establishment from RFB (silver layer).
       One row per CNPJ + cnae_code combination (main and secondary activities exploded).
-      FK to rfb__establishments via cnpj.
+      FK to rfb__establishment_core via cnpj.
       Merged incrementally.
     tests:
       - dbt_utils.expression_is_true:
@@ -255,7 +255,7 @@ models:
             severity: warn
     columns:
       - name: cnpj_id
-        description: "Full 14-digit CNPJ. FK to rfb__establishments. Part of composite key."
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Part of composite key."
         data_tests:
           - not_null
       - name: is_main_activity
@@ -391,7 +391,7 @@ models:
         description: "Ingestion timestamp from Bronze."
         tests: [not_null]
 
-  - name: rfb__simples
+  - name: rfb__simplified_tax_regime
     description: >
       Curated dataset of Simples Nacional and MEI registration data from RFB (silver layer).
       Deduplicated by company_root_id, merged incrementally.
@@ -405,11 +405,11 @@ models:
         data_tests:
           - not_null
           - unique
-      - name: is_simples
+      - name: is_simples_nacional
         description: "Whether the company is opted into Simples Nacional (true/false)."
-      - name: simples_option_date
+      - name: simples_nacional_option_date
         description: "Date the company opted into Simples Nacional (date)."
-      - name: simples_exclusion_date
+      - name: simples_nacional_exclusion_date
         description: "Date the company was excluded from Simples Nacional (date)."
       - name: is_mei
         description: "Whether the company is opted into MEI (true/false)."
