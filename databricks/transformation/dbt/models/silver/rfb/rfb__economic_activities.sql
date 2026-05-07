@@ -8,8 +8,7 @@ with base as (
         trim(cast(_c0 as string))              as economic_activity_code,
         trim(cast(_c1 as string))              as economic_activity_description,
         trim(cast(_reference_month as string)) as _reference_month,
-        _ingestion_ts,
-        current_timestamp() as _load_ts
+        _ingestion_ts
 
     from {{ source('bronze', 'rfb__cnaes') }}
     where _c0 is not null
@@ -27,6 +26,6 @@ select
     economic_activity_description,
     _reference_month,
     _ingestion_ts,
-    _load_ts
+    current_timestamp() as _load_ts
 
 from dedup

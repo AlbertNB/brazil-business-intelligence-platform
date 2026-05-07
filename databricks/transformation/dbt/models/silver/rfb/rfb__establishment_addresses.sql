@@ -22,8 +22,7 @@ with source as (
         trim(cast(_c19 as string))                                                          as state,
         trim(cast(_c20 as string))                                                          as municipality_code,
         trim(cast(_reference_month as string))                                               as _reference_month,
-        _ingestion_ts,
-        current_timestamp()                                                                  as _load_ts
+        _ingestion_ts
 
     from {{ source('bronze', 'rfb__estabelecimentos') }}
     where _c0 is not null
@@ -51,6 +50,6 @@ select
     municipality_code,
     _reference_month,
     _ingestion_ts,
-    _load_ts
+    current_timestamp() as _load_ts
 
 from dedup

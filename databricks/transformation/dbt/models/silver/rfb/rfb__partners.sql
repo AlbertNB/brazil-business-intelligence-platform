@@ -35,8 +35,7 @@ with source as (
             when '9' then 'OVER_80'
         end                                                             as age_group_description,
         trim(cast(_reference_month as string))                           as _reference_month,
-        _ingestion_ts,
-        current_timestamp()                                              as _load_ts
+        _ingestion_ts
 
     from {{ source('bronze', 'rfb__socios') }}
     where _c0 is not null
@@ -66,6 +65,6 @@ select
     age_group_description,
     _reference_month,
     _ingestion_ts,
-    _load_ts
+    current_timestamp() as _load_ts
 
 from dedup

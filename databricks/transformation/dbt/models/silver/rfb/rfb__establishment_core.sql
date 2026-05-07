@@ -34,8 +34,7 @@ with source as (
         trim(cast(_c28 as string))                                                          as special_status,
         {{ rfb_date('_c29') }}                                                              as special_status_date,
         trim(cast(_reference_month as string))                                               as _reference_month,
-        _ingestion_ts,
-        current_timestamp()                                                                  as _load_ts
+        _ingestion_ts
 
     from {{ source('bronze', 'rfb__estabelecimentos') }}
     where _c0 is not null
@@ -66,6 +65,6 @@ select
     special_status_date,
     _reference_month,
     _ingestion_ts,
-    _load_ts
+    current_timestamp() as _load_ts
 
 from dedup

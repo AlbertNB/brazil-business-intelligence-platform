@@ -7,8 +7,7 @@ with overrides as (
     select
         trim(cast(state_abbreviation as string)) as state_abbreviation,
         trim(cast(rfb_municipality_name_norm as string)) as rfb_municipality_name_norm,
-        trim(cast(ibge_municipality_name_norm as string)) as ibge_municipality_name_norm,
-        current_timestamp() as _load_ts
+        trim(cast(ibge_municipality_name_norm as string)) as ibge_municipality_name_norm
     from {{ ref('rfb__bridge_ibge_municipalities_overrides') }}
 
 ),
@@ -53,7 +52,6 @@ rfb as (
         m.municipality_name as source_municipality_name,
         m._reference_month as _reference_month,
         m._ingestion_ts as _ingestion_ts,
-        current_timestamp() as _load_ts,
         {{ rfb_normalize_municipality_name('m.municipality_name') }} as municipality_name_norm
     from rfb_establishments_latest e
     left join rfb_municipalities_latest m
@@ -82,7 +80,6 @@ rfb_with_override as (
         rfb.source_municipality_name,
         rfb._reference_month,
         rfb._ingestion_ts,
-        rfb._load_ts,
         overrides.ibge_municipality_name_norm is not null as is_override_applied,
         coalesce(
             overrides.ibge_municipality_name_norm,
@@ -110,7 +107,7 @@ select
     end as match_status,
     rfb._reference_month,
     rfb._ingestion_ts,
-    rfb._load_ts
+    current_timestamp() as _load_ts
 from rfb_with_override rfb
 left join ibge
     on rfb.municipality_name_norm_for_match = ibge.municipality_name_norm
