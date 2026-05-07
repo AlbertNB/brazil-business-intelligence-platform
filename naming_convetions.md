@@ -112,6 +112,7 @@ All silver models must expose and document the following metadata fields:
 
 | Field | Type | Description |
 |---|---|---|
+| `_extraction_ts` or `_reference_month` or `_reference_date` | `timestamp` or `string (yyyy-MM)` or `date` | Temporal reference field inherited from Bronze: use `_extraction_ts` for API calls, `_reference_month` for monthly snapshots, or `_reference_date` for date-based snapshots. |
 | `_ingestion_ts` | `timestamp` | Timestamp when the record was materialized in Bronze. |
 | `_load_ts` | `timestamp` | Timestamp when the record was materialized in Silver. |
 

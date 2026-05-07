@@ -65,6 +65,7 @@ select
     activities as economic_activity_details,
     notes as economic_activity_notes,
 
+    _extraction_ts,
     _ingestion_ts,
     _load_ts
 
