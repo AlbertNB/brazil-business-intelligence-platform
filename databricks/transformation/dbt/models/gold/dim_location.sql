@@ -19,8 +19,7 @@ with br_states as (
 
         state_abbreviation,
 
-        'ibge' as source,
-        _ingestion_ts
+        'ibge' as source
     from {{ ref('ibge__states') }}
 
 ),
@@ -55,8 +54,7 @@ br_municipalities as (
         intermediate_region_id,
         intermediate_region_name,
 
-        'ibge' as source,
-        _ingestion_ts
+        'ibge' as source
     from {{ ref('ibge__municipalities') }}
 
 ),
@@ -84,8 +82,7 @@ manual as (
         cast(null as string) as immediate_region_name,
         cast(null as bigint) as intermediate_region_id,
         cast(null as string) as intermediate_region_name,
-        'manual' as source,
-        current_timestamp() as _ingestion_ts
+        'manual' as source
     from {{ ref('ibge__location_manual_rows') }}
 
 ),
@@ -119,8 +116,7 @@ unioned as (
         cast(null as bigint) as intermediate_region_id,
         cast(null as string) as intermediate_region_name,
 
-        source,
-        _ingestion_ts
+        source
     from br_states
 
     union all
@@ -149,8 +145,7 @@ unioned as (
         intermediate_region_id,
         intermediate_region_name,
 
-        source,
-        _ingestion_ts
+        source
     from br_municipalities
 
     union all
@@ -175,8 +170,7 @@ unioned as (
         immediate_region_name,
         intermediate_region_id,
         intermediate_region_name,
-        source,
-        _ingestion_ts
+        source
     from manual
 
 ),
@@ -210,7 +204,6 @@ final as (
         intermediate_region_name,
 
         source,
-        _ingestion_ts,
         current_timestamp() as _updated_at
 
     from unioned
