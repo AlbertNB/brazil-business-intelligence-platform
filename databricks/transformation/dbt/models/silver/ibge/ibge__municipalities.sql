@@ -66,6 +66,7 @@ select
     intermediate_region_id,
     intermediate_region_name,
 
+    _extraction_ts,
     _ingestion_ts,
     _load_ts
 

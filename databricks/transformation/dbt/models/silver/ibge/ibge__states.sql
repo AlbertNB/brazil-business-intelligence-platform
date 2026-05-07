@@ -39,6 +39,7 @@ select
     region_name,
     region_abbreviation,
 
+    _extraction_ts,
     _ingestion_ts,
     _load_ts
 

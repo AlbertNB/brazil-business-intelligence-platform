@@ -53,6 +53,7 @@ base as (
             f -> to_json(f.geometry)
         ) as geom_multipolygon_jsons,
 
+        _extraction_ts,
         _ingestion_ts,
         _load_ts
 
@@ -70,6 +71,7 @@ exploded as (
             when 'Polygon'      then b.geom_polygon_jsons[feature_position]
             when 'MultiPolygon' then b.geom_multipolygon_jsons[feature_position]
         end as geom_json,
+        b._extraction_ts,
         b._ingestion_ts,
         b._load_ts
 
@@ -85,6 +87,7 @@ select
     trim(feature_item.geometry.type)       as geometry_type,
     geom_json                              as geometry_geojson,
     'geoJSON'                              as geometry_source_format,
+    _extraction_ts,
     _ingestion_ts,
     _load_ts
 
