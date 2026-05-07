@@ -72,10 +72,6 @@ models:
         description: "Origin of the record: ibge or manual."
         tests: [not_null]
 
-      - name: _ingestion_ts
-        description: "Timestamp when the source record was ingested into Bronze."
-        tests: [not_null]
-
       - name: _updated_at
         description: "Timestamp when this Gold row was last written."
         tests: [not_null]

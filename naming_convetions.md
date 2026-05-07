@@ -122,4 +122,5 @@ All gold models must expose the following metadata field:
 
 | Field | Type | Description |
 |---|---|---|
+| `_extraction_ts` or `_reference_month` or `_reference_date` | `timestamp` or `string (yyyy-MM)` or `date` | Optional temporal reference field inherited from upstream layers. Add it only when the Gold model is incremental and requires a cursor for incremental processing. |
 | `_updated_at` | `timestamp` | Timestamp when the record was last updated in Gold. |
