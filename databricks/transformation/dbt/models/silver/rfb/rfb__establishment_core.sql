@@ -1,6 +1,7 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['cnpj_id', '_reference_month']
+    unique_key = ['cnpj_id', '_reference_month'],
+    partition_by = ['_reference_month']
 ) }}
 
 with source as (
@@ -31,6 +32,7 @@ with source as (
         {{ rfb_date('_c6') }}                                                               as registration_status_date,
         trim(cast(_c7  as string))                                                          as registration_status_reason_code,
         {{ rfb_date('_c10') }}                                                              as activity_start_date,
+        nullif(trim(cast(_c11 as string)), '')                                              as main_cnae_code,
         trim(cast(_c28 as string))                                                          as special_status,
         {{ rfb_date('_c29') }}                                                              as special_status_date,
         trim(cast(_reference_month as string))                                               as _reference_month,
@@ -55,6 +57,7 @@ select
     registration_status_date,
     registration_status_reason_code,
     activity_start_date,
+    main_cnae_code,
     special_status,
     special_status_date,
     _reference_month,

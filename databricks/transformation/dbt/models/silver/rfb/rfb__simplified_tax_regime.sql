@@ -1,6 +1,7 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['company_root_id', '_reference_month']
+    unique_key = ['company_root_id', '_reference_month'],
+    partition_by = ['_reference_month']
 ) }}
 
 with source as (

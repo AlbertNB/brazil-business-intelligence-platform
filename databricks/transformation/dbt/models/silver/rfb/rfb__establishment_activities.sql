@@ -1,6 +1,7 @@
 {{ config(
     materialized = 'incremental',
-    unique_key = ['cnpj_id', 'is_main_activity', 'cnae_code', '_reference_month']
+    unique_key = ['cnpj_id', 'is_main_activity', 'cnae_code', '_reference_month'],
+    partition_by = ['_reference_month']
 ) }}
 
 with source as (
