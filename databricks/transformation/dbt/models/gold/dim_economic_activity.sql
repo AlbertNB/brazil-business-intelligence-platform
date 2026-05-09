@@ -1,6 +1,6 @@
 {{ config(
     materialized = "table",
-    tags = ["dim", "economic_activity"]
+    tags = ["dim", "business_registry"]
 ) }}
 
 with rfb as (
