@@ -604,9 +604,6 @@ models:
       - name: registration_status_description
         description: "Official description of the registration status."
         tests: [not_null]
-      - name: is_active
-        description: "True when the registration status is ACTIVE (02)."
-        tests: [not_null]
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
         tests: [not_null]

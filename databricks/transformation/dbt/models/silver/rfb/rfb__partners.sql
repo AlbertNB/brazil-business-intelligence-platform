@@ -63,3 +63,7 @@ select
     current_timestamp() as _load_ts
 
 from source
+qualify row_number() over (
+    partition by company_root_id, partner_name, partner_document_id, _reference_month
+    order by _ingestion_ts desc
+) = 1

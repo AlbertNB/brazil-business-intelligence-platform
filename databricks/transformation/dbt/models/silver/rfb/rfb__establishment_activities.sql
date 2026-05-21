@@ -69,3 +69,7 @@ select
 from activities
 where cnae_code is not null
   and cnae_code != ''
+qualify row_number() over (
+    partition by cnpj_id, is_main_activity, cnae_code, _reference_month
+    order by _ingestion_ts desc
+) = 1
