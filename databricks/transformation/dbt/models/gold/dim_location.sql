@@ -97,9 +97,9 @@ unioned as (
         ibge_code,
 
         -- state-level attributes
-        cast(null as bigint) as state_id,
-        cast(null as string) as state_name,
-        cast(null as string) as state_abbreviation,
+        location_nk as state_id,
+        location_name as state_name,
+        state_abbreviation,
 
         -- region attributes
         region_id,
