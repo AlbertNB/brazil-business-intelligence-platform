@@ -11,9 +11,32 @@ def parse_args() -> argparse.Namespace:
 
     # What to load
     p.add_argument("--source", required=True, help="Source name (e.g. ibge, rfb).")
+    p.add_argument("--path_domain", default="", help="Optional domain layer in path (e.g. cnpj/).")
     p.add_argument("--streams", default="*", help="Comma-separated list or '*' to discover from landing.")
+    p.add_argument("--format", default="json", help="Auto Loader format (json, csv).")
     p.add_argument("--encoding", default="UTF-8", help="Input file encoding. Default=UTF-8.")
-    p.add_argument("--multiline", default="true", help="JSON multiline (true/false). Useful for JSON arrays.")
+    p.add_argument(
+        "--multiline",
+        default="true",
+        help="Multiline records flag (true/false). Useful for JSON arrays and CSV fields containing line breaks.",
+    )
+
+    # Optional CSV-specific behavior
+    p.add_argument(
+        "--header",
+        default="true",
+        help="CSV header flag (true/false). Default=true. Use false for files without column names."
+    )
+    p.add_argument("--delimiter", default=",", help="CSV delimiter. Default=','")
+    p.add_argument("--quote", default='"', help="CSV quote character. Default='\"'")
+    p.add_argument("--escape", default='"', help="CSV escape character. Default='\"'")
+
+    # Optional partitioning behavior
+    p.add_argument(
+        "--partition_by_column",
+        default="",
+        help="Optional Bronze partition column (e.g. reference_month). If empty, no partitioning is applied."
+    )
 
     # Storage roots (required)
     p.add_argument("--landing_root", required=True, help="Landing root path (e.g. s3://bbip-landing-prod-<account>-<region>/).")
@@ -36,7 +59,7 @@ def join_path(*parts: str) -> str:
 
 
 def build_paths(args: argparse.Namespace, stream: str) -> Dict[str, str]:
-    base = join_path(args.landing_root, args.source)
+    base = join_path(args.landing_root, args.source, args.path_domain) if args.path_domain else join_path(args.landing_root, args.source)
     src = join_path(base, stream) + "/"
 
     table_name = f"{sql_safe(args.source)}__{sql_safe(stream)}"
@@ -64,13 +87,44 @@ def list_streams_from_landing(dbutils, landing_base: str) -> List[str]:
 
 
 def build_reader(spark: SparkSession, args: argparse.Namespace, paths: Dict[str, str]):
-    return (
+    reader = (
         spark.readStream
-            .format("cloudFiles")
-            .option("cloudFiles.format", "json")
-            .option("cloudFiles.schemaLocation", paths["schema_loc"])
-            .option("encoding", args.encoding)
+        .format("cloudFiles")
+        .option("cloudFiles.format", args.format)
+        .option("cloudFiles.schemaLocation", paths["schema_loc"])
+        .option("encoding", args.encoding)
+    )
+
+    if args.format.lower() == "json":
+        reader = reader.option("multiLine", args.multiline.lower())
+
+    if args.format.lower() == "csv":
+        reader = (
+            reader
+            .option("header", str(args.header).lower())
             .option("multiLine", args.multiline.lower())
+            .option("delimiter", args.delimiter)
+            .option("quote", args.quote)
+            .option("escape", args.escape)
+        )
+
+    return reader
+
+
+def enrich_partition_column(df, args: argparse.Namespace):
+    partition_col = (args.partition_by_column or "").strip()
+
+    if not partition_col:
+        return df
+
+    if partition_col in df.columns:
+        return df
+
+    # Dynamically derive from file path in the format .../<partition_col>=<value>/...
+    pattern = rf"(?:^|/){re.escape(partition_col)}=([^/]+)"
+    return df.withColumn(
+        partition_col,
+        F.regexp_extract(F.col("_metadata.file_path"), pattern, 1)
     )
 
 
@@ -83,17 +137,25 @@ def run_one_stream(spark: SparkSession, args: argparse.Namespace, stream: str, p
               .withColumn("_source_file", F.col("_metadata.file_path"))
     )
 
+    df = enrich_partition_column(df, args)
+
     df = df.withColumn("_raw", F.to_json(F.struct("*")))
 
-    q = (
+    partition_col = (args.partition_by_column or "").strip()
+
+    writer = (
         df.writeStream
           .format("delta")
           .option("checkpointLocation", paths["checkpoint"])
           .option("path", paths["out"])
           .outputMode("append")
           .trigger(availableNow=True)
-          .start()
     )
+
+    if partition_col:
+        writer = writer.partitionBy(partition_col)
+
+    q = writer.start()
     q.awaitTermination()
 
     spark.sql(f"""
@@ -110,6 +172,7 @@ def run_one_stream(spark: SparkSession, args: argparse.Namespace, stream: str, p
         "bronze_path": paths["out"],
         "checkpoint": paths["checkpoint"],
         "schema_location": paths["schema_loc"],
+        "partition_by_column": partition_col,
     }
 
 

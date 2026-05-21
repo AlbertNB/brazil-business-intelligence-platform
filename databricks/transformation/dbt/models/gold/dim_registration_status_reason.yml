@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: dim_registration_status_reason
+    description: "Gold dimension of registration status reasons from RFB."
+    columns:
+      - name: registration_status_reason_sk
+        description: "Deterministic surrogate key generated from registration_status_reason_nk."
+        tests: [not_null, unique]
+
+      - name: registration_status_reason_nk
+        description: "Natural key — RFB reason code associated with a registration status change."
+        tests: [not_null, unique]
+
+      - name: registration_status_reason_description
+        description: "Human-readable reason description (e.g., Extinção por Encerramento de Liquidação Voluntária)."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]

@@ -1,0 +1,15 @@
+version: 2
+
+seeds:
+  - name: rfb__bridge_ibge_municipalities_overrides
+    description: "Manual overrides for municipality name matching between RFB and IBGE."
+    columns:
+      - name: state_abbreviation
+        description: "UF abbreviation used as a match constraint."
+        tests: [not_null]
+      - name: rfb_municipality_name_norm
+        description: "Normalized municipality name as it appears in RFB data."
+        tests: [not_null]
+      - name: ibge_municipality_name_norm
+        description: "Normalized municipality name to force match in IBGE."
+        tests: [not_null]

@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: dim_economic_activity
+    description: "CNAE economic activity dimension (gold layer). Full hierarchy flattened from subclass up to section, with normalized activity descriptions."
+    columns:
+      - name: economic_activity_sk
+        description: "Deterministic surrogate key generated from economic_activity_nk."
+        tests: [not_null, unique]
+
+      - name: economic_activity_nk
+        description: "Natural key — CNAE subclass identifier."
+        tests: [not_null, unique]
+
+      - name: economic_activity_name
+        description: "CNAE subclass description."
+        tests: [not_null]
+
+      - name: class_id
+        description: "CNAE class identifier."
+        tests: [not_null]
+
+      - name: class_description
+        description: "CNAE class description."
+        tests: [not_null]
+
+      - name: class_notes
+        description: "Array of notes associated with the CNAE class, with CRLF normalized to LF."
+
+      - name: group_id
+        description: "CNAE group identifier."
+        tests: [not_null]
+
+      - name: group_description
+        description: "CNAE group description."
+        tests: [not_null]
+
+      - name: division_id
+        description: "CNAE division identifier."
+        tests: [not_null]
+
+      - name: division_description
+        description: "CNAE division description."
+        tests: [not_null]
+
+      - name: section_id
+        description: "CNAE section identifier."
+        tests: [not_null]
+
+      - name: section_description
+        description: "CNAE section description."
+        tests: [not_null]
+
+      - name: economic_activity_details
+        description: "Array of normalized activity descriptions. Items with exactly one semicolon are reordered (suffix moved to prefix) to produce human-readable phrases."
+
+      - name: economic_activity_notes
+        description: "Array of notes associated with the CNAE subclass."
+
+      - name: hierarchy_source
+        description: "Source used to populate hierarchy fields: IBGE (exact subclass match), INFERRED (matched by first 5 digits/class_id), or UNKNOWN (no hierarchy match)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['IBGE', 'INFERRED', 'UNKNOWN']
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]

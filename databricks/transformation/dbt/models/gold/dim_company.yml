@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: dim_company
+    description: "Gold company dimension from the latest RFB company snapshot, enriched with Simples Nacional and MEI tax regime information."
+    columns:
+      - name: company_sk
+        description: "Deterministic surrogate key generated from company_root_nk."
+        tests: [not_null, unique]
+
+      - name: company_root_nk
+        description: "Natural key — 8-digit CNPJ root identifier shared by all establishments of the same company."
+        tests: [not_null, unique]
+
+      - name: company_name
+        description: "Official registered legal name of the company (razão social)."
+        tests: [not_null]
+
+      - name: legal_nature_sk
+        description: "Surrogate key of the legal nature (FK to dim_legal_nature)."
+        tests: [not_null]
+
+      - name: legal_nature_nk
+        description: "Natural key — RFB legal nature code."
+        tests: [not_null]
+
+      - name: responsible_qualification_sk
+        description: "Surrogate key of the responsible person's qualification (FK to dim_qualification)."
+        tests: [not_null]
+
+      - name: responsible_qualification_nk
+        description: "Natural key — RFB qualification code for the company's responsible person."
+        tests: [not_null]
+
+      - name: company_size_sk
+        description: "Surrogate key of the company size tier (FK to dim_company_size)."
+        tests: [not_null]
+
+      - name: company_size_nk
+        description: "Natural key — RFB company size code (01 = micro, 03 = small, 05 = other)."
+        tests: [not_null]
+
+      - name: company_size_description
+        description: "Human-readable label for the company size tier."
+
+      - name: share_capital
+        description: "Declared share capital of the company in BRL."
+
+      - name: is_simples
+        description: "Boolean flag: true when the company is enrolled in Simples Nacional at the latest reference date."
+
+      - name: simples_nacional_option_date
+        description: "Date on which the company opted into the Simples Nacional regime."
+
+      - name: simples_nacional_exclusion_date
+        description: "Date on which the company was excluded from the Simples Nacional regime. Null if still active."
+
+      - name: is_mei
+        description: "Boolean flag: true when the company is registered as a Microempreendedor Individual (MEI)."
+
+      - name: mei_option_date
+        description: "Date on which the company opted into the MEI regime."
+
+      - name: mei_exclusion_date
+        description: "Date on which the company was excluded from the MEI regime. Null if still active."
+
+      - name: _reference_month
+        description: "Reference month of the RFB data extract used to build this snapshot."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]
