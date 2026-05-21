@@ -1,0 +1,119 @@
+version: 2
+
+models:
+  - name: dim_establishment
+    description: "Gold establishment dimension from the latest RFB snapshot, enriched with address, contact and primary economic activity data. Each row represents one CNPJ establishment."
+    columns:
+      - name: establishment_sk
+        description: "Deterministic surrogate key generated from establishment_nk (cnpj_id)."
+        tests: [not_null, unique]
+
+      - name: establishment_nk
+        description: "Natural key — 14-digit CNPJ identifier (cnpj_id) of the establishment."
+        tests: [not_null, unique]
+
+      - name: company_root_nk
+        description: "8-digit CNPJ root shared by all establishments of the same company. FK to dim_company."
+        tests: [not_null]
+
+      - name: cnpj
+        description: "Full 14-digit CNPJ of the establishment (same as establishment_nk, kept for readability)."
+
+      - name: establishment_order
+        description: "4-digit CNPJ order number that identifies the establishment within the company."
+
+      - name: establishment_check_digit
+        description: "2-digit CNPJ check digits."
+
+      - name: trade_name
+        description: "Trade name (nome fantasia) of the establishment. Null when not informed."
+
+      - name: branch_type
+        description: "Human-readable establishment type description (Matriz / Filial)."
+
+      - name: is_headquarters
+        description: "Boolean flag: true when establishment_type_id is 1 (Matriz)."
+        tests: [not_null]
+
+      - name: is_branch
+        description: "Boolean flag: true when establishment_type_id is 2 (Filial)."
+        tests: [not_null]
+
+      - name: registration_status_sk
+        description: "Surrogate key of the registration status (FK to dim_registration_status)."
+        tests: [not_null]
+
+      - name: registration_status_nk
+        description: "Natural key — RFB registration status code."
+
+      - name: is_active
+        description: "Boolean flag: true when registration_status_id is 02 (Ativa)."
+        tests: [not_null]
+
+      - name: registration_status_reason_sk
+        description: "Surrogate key of the registration status reason (FK to dim_registration_status_reason)."
+
+      - name: registration_status_reason_nk
+        description: "Natural key — RFB reason code for the last registration status change."
+
+      - name: registration_status_date
+        description: "Date of the last registration status change."
+
+      - name: primary_economic_activity_sk
+        description: "Surrogate key of the main CNAE (FK to dim_economic_activity)."
+
+      - name: primary_economic_activity_nk
+        description: "Natural key — CNAE subclass code of the main economic activity."
+
+      - name: opening_date
+        description: "Date the establishment started activities (data de início de atividade)."
+
+      - name: closing_date
+        description: "Date the establishment was cancelled (status code 08). Null for active establishments."
+
+      - name: location_sk
+        description: "Surrogate key of the municipality (FK to dim_location). Null for foreign-based or unmatched establishments."
+
+      - name: country_sk
+        description: "Surrogate key of the country (FK to dim_country). Defaults to Brazil (105) when not informed."
+
+      - name: country_nk
+        description: "Natural key — RFB country code."
+
+      - name: state_abbreviation
+        description: "Two-letter state abbreviation (UF). EX for foreign establishments."
+
+      - name: zip_code
+        description: "Brazilian postal code (CEP) of the establishment address."
+
+      - name: address
+        description: "Full street address (type + name) of the establishment, concatenated from address_type and street_name."
+
+      - name: address_number
+        description: "Street number of the establishment address."
+
+      - name: address_complement
+        description: "Additional address complement (apt, floor, etc.)."
+
+      - name: neighborhood
+        description: "Neighborhood (bairro) of the establishment address."
+
+      - name: phone_1
+        description: "Primary phone number with area code, concatenated from phone_area_code_1 and phone_number_1."
+
+      - name: phone_2
+        description: "Secondary phone number with area code, concatenated from phone_area_code_2 and phone_number_2."
+
+      - name: fax
+        description: "Fax number with area code."
+
+      - name: email
+        description: "Contact email address of the establishment."
+
+      - name: _reference_month
+        description: "Reference month of the RFB data extract used to build this snapshot."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]

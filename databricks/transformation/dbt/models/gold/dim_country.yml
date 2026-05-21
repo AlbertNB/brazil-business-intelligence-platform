@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: dim_country
+    description: "Gold dimension of RFB country codes."
+    columns:
+      - name: country_sk
+        description: "Deterministic surrogate key generated from country_nk."
+        tests: [not_null, unique]
+
+      - name: country_nk
+        description: "Natural key — RFB country code (numeric string). Code 105 represents Brazil."
+        tests: [not_null, unique]
+
+      - name: country_name
+        description: "Human-readable country name."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]

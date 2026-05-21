@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: dim_qualification
+    description: "Gold dimension of RFB qualification codes for responsible persons of companies."
+    columns:
+      - name: qualification_sk
+        description: "Deterministic surrogate key generated from qualification_nk."
+        tests: [not_null, unique]
+
+      - name: qualification_nk
+        description: "Natural key — RFB qualification code (numeric string) identifying the role of the responsible person."
+        tests: [not_null, unique]
+
+      - name: qualification_description
+        description: "Human-readable qualification description (e.g., Sócio-Administrador, Diretor)."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]

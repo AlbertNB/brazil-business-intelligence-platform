@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: dim_registration_status
+    description: "Gold dimension of establishment registration statuses sourced from the dedicated Silver business registry reference model."
+    columns:
+      - name: registration_status_sk
+        description: "Deterministic surrogate key generated from registration_status_nk."
+        tests: [not_null, unique]
+
+      - name: registration_status_nk
+        description: "Natural key — RFB registration status code (e.g. 02 = active, 08 = cancelled)."
+        tests: [not_null, unique]
+
+      - name: registration_status_description
+        description: "Human-readable status description (e.g., Ativa, Baixada, Suspensa)."
+        tests: [not_null]
+
+      - name: is_active
+        description: "Boolean flag: true when the status code is 02 (Ativa)."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]

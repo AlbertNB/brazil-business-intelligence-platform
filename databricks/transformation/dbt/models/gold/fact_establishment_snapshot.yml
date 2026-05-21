@@ -1,0 +1,108 @@
+version: 2
+
+models:
+  - name: fact_establishment_snapshot
+    description: "Latest-snapshot fact table at establishment grain with operational status flags, tax regime attributes, and additive counts (each count is 0 or 1 per row to support aggregation)."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [establishment_sk]
+    columns:
+      - name: establishment_sk
+        description: "Surrogate key of the establishment (FK to dim_establishment). Grain of this table."
+        tests: [not_null]
+
+      - name: company_sk
+        description: "Surrogate key of the parent company (FK to dim_company)."
+
+      - name: location_sk
+        description: "Surrogate key of the municipality where the establishment is located (FK to dim_location)."
+
+      - name: primary_economic_activity_sk
+        description: "Surrogate key of the establishment's main CNAE (FK to dim_economic_activity)."
+
+      - name: legal_nature_sk
+        description: "Surrogate key of the company's legal nature (FK to dim_legal_nature)."
+
+      - name: legal_nature_nk
+        description: "Natural key — RFB legal nature code."
+
+      - name: company_size_sk
+        description: "Surrogate key of the company size tier (FK to dim_company_size)."
+
+      - name: company_size_nk
+        description: "Natural key — RFB company size code (01 = micro, 03 = small, 05 = other)."
+
+      - name: registration_status_sk
+        description: "Surrogate key of the registration status (FK to dim_registration_status)."
+
+      - name: registration_status_nk
+        description: "Natural key — RFB registration status code."
+
+      - name: registration_status_reason_sk
+        description: "Surrogate key of the registration status reason (FK to dim_registration_status_reason)."
+
+      - name: registration_status_reason_nk
+        description: "Natural key — RFB reason code for the last registration status change."
+
+      - name: is_active
+        description: "Boolean flag: true when registration_status_id is 02 (Ativa)."
+
+      - name: is_headquarters
+        description: "Boolean flag: true when the establishment is the company's headquarters (Matriz)."
+
+      - name: is_branch
+        description: "Boolean flag: true when the establishment is a branch (Filial)."
+
+      - name: is_simples
+        description: "Boolean flag: true when the parent company is enrolled in Simples Nacional."
+
+      - name: is_mei
+        description: "Boolean flag: true when the parent company is registered as MEI."
+
+      - name: simples_nacional_option_date
+        description: "Date on which the company opted into Simples Nacional."
+
+      - name: simples_nacional_exclusion_date
+        description: "Date on which the company was excluded from Simples Nacional. Null if still enrolled."
+
+      - name: mei_option_date
+        description: "Date on which the company opted into the MEI regime."
+
+      - name: mei_exclusion_date
+        description: "Date on which the company was excluded from MEI. Null if still enrolled."
+
+      - name: opening_date
+        description: "Date the establishment started activities (data de início de atividade)."
+
+      - name: closing_date
+        description: "Date the establishment was cancelled (status 08). Null for active establishments."
+
+      - name: registration_status_date
+        description: "Date of the last registration status change."
+
+      - name: establishment_count
+        description: "Always 1. Additive counter for aggregating the total number of establishments."
+
+      - name: active_establishment_count
+        description: "1 when the establishment is active, 0 otherwise. Additive across groups."
+
+      - name: headquarter_count
+        description: "1 when the establishment is a headquarters, 0 otherwise. Additive across groups."
+
+      - name: branch_count
+        description: "1 when the establishment is a branch, 0 otherwise. Additive across groups."
+
+      - name: simples_count
+        description: "1 when the parent company is in Simples Nacional, 0 otherwise. Additive across groups."
+
+      - name: mei_count
+        description: "1 when the parent company is MEI, 0 otherwise. Additive across groups."
+
+      - name: _reference_month
+        description: "Reference month of the RFB data extract used to build this snapshot."
+        tests: [not_null]
+
+      - name: _updated_at
+        description: "Timestamp when this row was last written to the gold table."
+        tests: [not_null]
