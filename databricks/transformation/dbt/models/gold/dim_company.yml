@@ -35,18 +35,6 @@ models:
         description: "Natural key — RFB legal nature code."
         tests: [not_null]
 
-      - name: responsible_qualification_sk
-        description: "Surrogate key of the responsible person's qualification (FK to dim_qualification)."
-        tests:
-          - not_null
-          - relationships:
-              to: ref('dim_qualification')
-              field: qualification_sk
-
-      - name: responsible_qualification_nk
-        description: "Natural key — RFB qualification code for the company's responsible person."
-        tests: [not_null]
-
       - name: company_size_sk
         description: "Surrogate key of the company size tier (FK to dim_company_size)."
         tests:
