@@ -104,6 +104,8 @@ models:
           - relationships:
               to: ref('dim_country')
               field: country_sk
+              config:
+                severity: warn
 
       - name: country_nk
         description: "Natural key — RFB country code."

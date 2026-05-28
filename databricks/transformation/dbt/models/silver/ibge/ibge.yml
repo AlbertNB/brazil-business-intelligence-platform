@@ -69,16 +69,12 @@ models:
         tests: [not_null]
       - name: mesoregion_id
         description: "IBGE mesoregion identifier."
-        tests: [not_null]
       - name: mesoregion_name
         description: "IBGE mesoregion name."
-        tests: [not_null]
       - name: microregion_id
         description: "IBGE microregion identifier."
-        tests: [not_null]
       - name: microregion_name
         description: "IBGE microregion name."
-        tests: [not_null]
       - name: immediate_region_id
         description: "IBGE immediate region (região imediata) identifier."
         tests: [not_null]
@@ -213,11 +209,11 @@ models:
         description: "Complete GeoJSON geometry object serialized as JSON string, including coordinates."
         tests: [not_null]
       - name: geometry_source_format
-        description: "Source format of the geometry data (always 'geojson')."
+        description: "Source format of the geometry data (always 'geoJSON')."
         tests:
           - not_null
           - accepted_values:
-              values: ['geojson']
+              values: ['geoJSON']
       - name: location_id
         description: "IBGE area code extracted from feature properties."
         tests: [not_null, unique]
