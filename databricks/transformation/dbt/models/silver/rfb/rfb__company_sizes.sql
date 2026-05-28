@@ -5,17 +5,11 @@
 with source as (
 
     select
-        trim(cast(_c5 as string)) as company_size_id,
-        case trim(cast(_c5 as string))
-            when '00' then 'NOT_INFORMED'
-            when '01' then 'MICRO_COMPANY'
-            when '03' then 'SMALL_COMPANY'
-            when '05' then 'OTHER'
-        end as company_size_description,
+        {{ rfb_company_size_id('_c5') }}              as company_size_id,
+        {{ rfb_company_size_description('_c5') }}     as company_size_description,
         _reference_month,
         _ingestion_ts
     from {{ source('bronze', 'rfb__empresas') }}
-    where _c5 is not null
 
 ),
 
