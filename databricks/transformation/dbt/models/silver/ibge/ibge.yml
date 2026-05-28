@@ -3,6 +3,10 @@ version: 2
 models:
   - name: ibge__states
     description: "Curated Brazilian states (UF) dataset from IBGE (silver layer). Deduplicated by natural key."
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "length(cast(state_id as string)) = 2"
     columns:
       - name: state_id
         description: "IBGE state (UF) identifier (natural key)."
@@ -34,6 +38,10 @@ models:
 
   - name: ibge__municipalities
     description: "Curated Brazilian municipalities dataset from IBGE (silver layer). Deduplicated by natural key, enriched with state, region, meso/microregion, immediate and intermediate region attributes."
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "length(cast(municipality_id as string)) = 7"
     columns:
       - name: municipality_id
         description: "IBGE municipality identifier (natural key)."
@@ -123,6 +131,10 @@ models:
 
   - name: ibge__economic_activities
     description: "Curated CNAE economic activity subclasses from IBGE (silver layer), with full hierarchy flattened: subclass → class → group → division → section."
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "length(economic_activity_id) = 7"
     columns:
       - name: section_id
         description: "CNAE section identifier."

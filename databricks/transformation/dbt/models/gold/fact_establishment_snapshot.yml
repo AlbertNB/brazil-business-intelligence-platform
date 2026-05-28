@@ -7,40 +7,88 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [establishment_sk]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "establishment_count = 1"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "active_establishment_count in (0, 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "headquarter_count + branch_count = 1"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "simples_count in (0, 1)"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "mei_count in (0, 1)"
     columns:
       - name: establishment_sk
         description: "Surrogate key of the establishment (FK to dim_establishment). Grain of this table."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_establishment')
+              field: establishment_sk
 
       - name: company_sk
         description: "Surrogate key of the parent company (FK to dim_company)."
+        tests:
+          - relationships:
+              to: ref('dim_company')
+              field: company_sk
 
       - name: location_sk
         description: "Surrogate key of the municipality where the establishment is located (FK to dim_location)."
+        tests:
+          - relationships:
+              to: ref('dim_location')
+              field: location_sk
 
       - name: primary_economic_activity_sk
         description: "Surrogate key of the establishment's main CNAE (FK to dim_economic_activity)."
+        tests:
+          - relationships:
+              to: ref('dim_economic_activity')
+              field: economic_activity_sk
 
       - name: legal_nature_sk
         description: "Surrogate key of the company's legal nature (FK to dim_legal_nature)."
+        tests:
+          - relationships:
+              to: ref('dim_legal_nature')
+              field: legal_nature_sk
 
       - name: legal_nature_nk
         description: "Natural key — RFB legal nature code."
 
       - name: company_size_sk
         description: "Surrogate key of the company size tier (FK to dim_company_size)."
+        tests:
+          - relationships:
+              to: ref('dim_company_size')
+              field: company_size_sk
 
       - name: company_size_nk
         description: "Natural key — RFB company size code (01 = micro, 03 = small, 05 = other)."
 
       - name: registration_status_sk
         description: "Surrogate key of the registration status (FK to dim_registration_status)."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_registration_status')
+              field: registration_status_sk
 
       - name: registration_status_nk
         description: "Natural key — RFB registration status code."
 
       - name: registration_status_reason_sk
         description: "Surrogate key of the registration status reason (FK to dim_registration_status_reason)."
+        tests:
+          - relationships:
+              to: ref('dim_registration_status_reason')
+              field: registration_status_reason_sk
 
       - name: registration_status_reason_nk
         description: "Natural key — RFB reason code for the last registration status change."

@@ -50,6 +50,9 @@ models:
               values: ['00', '01', '03', '05']
       - name: company_size_description
         description: "Company size label in uppercase (NOT_INFORMED, MICRO_COMPANY, SMALL_COMPANY, OTHER)."
+        tests:
+          - accepted_values:
+              values: ['NOT_INFORMED', 'MICRO_COMPANY', 'SMALL_COMPANY', 'OTHER']
       - name: federative_entity_responsible
         description: "Federative entity responsible for this company, when applicable."
       - name: _reference_month
@@ -90,6 +93,9 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: length(establishment_check_digit) = 2
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
     columns:
       - name: cnpj_id
         description: "Full 14-digit CNPJ (company_root_id + establishment_order + establishment_check_digit). Business key repeated across monthly snapshots."
@@ -110,19 +116,27 @@ models:
       - name: establishment_type_id
         description: "Establishment type code (1=HEADQUARTERS, 2=BRANCH)."
         tests:
+          - not_null
           - accepted_values:
               values: ['1', '2']
       - name: establishment_type_description
         description: "Establishment type label in uppercase (HEADQUARTERS, BRANCH)."
+        tests:
+          - accepted_values:
+              values: ['HEADQUARTERS', 'BRANCH']
       - name: trade_name
         description: "Trade name (nome fantasia) of the establishment."
       - name: registration_status_id
         description: "Registration status code (01=NULL_REGISTRATION, 02=ACTIVE, 03=SUSPENDED, 04=UNFIT, 08=CLOSED)."
         tests:
+          - not_null
           - accepted_values:
               values: ['01', '02', '03', '04', '08']
       - name: registration_status_description
         description: "Registration status label in uppercase (NULL_REGISTRATION, ACTIVE, SUSPENDED, UNFIT, CLOSED)."
+        tests:
+          - accepted_values:
+              values: ['NULL_REGISTRATION', 'ACTIVE', 'SUSPENDED', 'UNFIT', 'CLOSED']
       - name: registration_status_date
         description: "Date of the current registration status (date)."
       - name: registration_status_reason_code
@@ -288,6 +302,9 @@ models:
             expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
           config:
             severity: warn
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnae_code) = 7
     columns:
       - name: cnpj_id
         description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Part of the snapshot composite key."
@@ -391,10 +408,14 @@ models:
       - name: partner_identifier_id
         description: "Partner identifier type code (1=LEGAL_ENTITY, 2=INDIVIDUAL, 3=FOREIGNER)."
         tests:
+          - not_null
           - accepted_values:
               values: ['1', '2', '3']
       - name: partner_identifier_description
         description: "Partner identifier type label in uppercase (LEGAL_ENTITY, INDIVIDUAL, FOREIGNER)."
+        tests:
+          - accepted_values:
+              values: ['LEGAL_ENTITY', 'INDIVIDUAL', 'FOREIGNER']
       - name: partner_name
         description: "Partner name. Part of the snapshot composite key."
       - name: partner_document_id
@@ -432,10 +453,14 @@ models:
       - name: age_group_id
         description: "Age group code (0=NOT_APPLICABLE, 1=0_TO_12, 2=13_TO_20, 3=21_TO_30, 4=31_TO_40, 5=41_TO_50, 6=51_TO_60, 7=61_TO_70, 8=71_TO_80, 9=OVER_80)."
         tests:
+          - not_null
           - accepted_values:
               values: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
       - name: age_group_description
         description: "Age group label in uppercase."
+        tests:
+          - accepted_values:
+              values: ['NOT_APPLICABLE', '0_TO_12', '13_TO_20', '21_TO_30', '31_TO_40', '41_TO_50', '51_TO_60', '61_TO_70', '71_TO_80', 'OVER_80']
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
         tests: [not_null]
@@ -492,6 +517,10 @@ models:
     description: >
       Reference table of Brazilian legal natures (natureza jurídica) from RFB (silver layer).
       Full refresh. Deduplicated by legal_nature_code.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(legal_nature_code) = 4
     columns:
       - name: legal_nature_code
         description: "Legal nature code (4 digits). Natural key."
@@ -579,10 +608,17 @@ models:
     columns:
       - name: company_size_id
         description: "Company size code. Natural key."
-        tests: [not_null, unique]
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              values: ['00', '01', '03', '05']
       - name: company_size_description
         description: "Company size label in uppercase."
-        tests: [not_null]
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['NOT_INFORMED', 'MICRO_COMPANY', 'SMALL_COMPANY', 'OTHER']
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
         tests: [not_null]
@@ -600,10 +636,17 @@ models:
     columns:
       - name: registration_status_id
         description: "Registration status code. Natural key."
-        tests: [not_null, unique]
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              values: ['01', '02', '03', '04', '08']
       - name: registration_status_description
         description: "Official description of the registration status."
-        tests: [not_null]
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['NULL_REGISTRATION', 'ACTIVE', 'SUSPENDED', 'UNFIT', 'CLOSED']
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
         tests: [not_null]
@@ -639,6 +682,10 @@ models:
     description: >
       Reference table of CNAE economic activities as coded by RFB (silver layer).
       Full refresh. Deduplicated by economic_activity_code.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(economic_activity_code) = 7
     columns:
       - name: economic_activity_code
         description: "RFB economic activity code. Natural key."

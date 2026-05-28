@@ -6,10 +6,23 @@ models:
     tests:
       - dbt_utils.unique_combination_of_columns:
           combination_of_columns: [location_sk, year]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "population_census is null or population_census > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "population_estimated is null or population_estimated > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "area_km2 is null or area_km2 > 0"
     columns:
       - name: location_sk
         description: "Surrogate key of the related location dimension (dim_location)."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: location_sk
 
       - name: location_nk
         description: "Natural location key aligned with dim_location.location_nk, stored as the IBGE identifier in string format."

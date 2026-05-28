@@ -10,11 +10,19 @@ models:
     columns:
       - name: establishment_sk
         description: "Surrogate key of the establishment (FK to dim_establishment)."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_establishment')
+              field: establishment_sk
 
       - name: economic_activity_sk
         description: "Surrogate key of the economic activity/CNAE (FK to dim_economic_activity)."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_economic_activity')
+              field: economic_activity_sk
 
       - name: activity_type
         description: "Whether this CNAE is the establishment's main or secondary activity (main / secondary)."

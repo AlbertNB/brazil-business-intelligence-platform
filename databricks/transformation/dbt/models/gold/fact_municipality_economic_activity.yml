@@ -7,14 +7,34 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: [location_sk, economic_activity_sk, is_main_activity, is_active]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "establishments_count > 0"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "headquarter_count + branch_count = establishments_count"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "simples_count >= 0 and simples_count <= establishments_count"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "mei_count >= 0 and mei_count <= simples_count"
     columns:
       - name: location_sk
         description: "Surrogate key of the municipality (FK to dim_location). Part of the composite grain."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: location_sk
 
       - name: economic_activity_sk
         description: "Surrogate key of the CNAE economic activity (FK to dim_economic_activity). Part of the composite grain."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_economic_activity')
+              field: economic_activity_sk
 
       - name: is_main_activity
         description: "Boolean flag: true when this CNAE is the establishments' primary activity; false for secondary. Part of the composite grain."
