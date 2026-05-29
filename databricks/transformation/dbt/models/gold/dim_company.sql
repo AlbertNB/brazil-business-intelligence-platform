@@ -53,8 +53,6 @@ final as (
         c.legal_name as company_name,
         {{ generate_sk(['c.legal_nature_code']) }} as legal_nature_sk,
         c.legal_nature_code as legal_nature_nk,
-        {{ generate_sk(['c.responsible_person_qualification']) }} as responsible_qualification_sk,
-        c.responsible_person_qualification as responsible_qualification_nk,
         {{ generate_sk(['c.company_size_id']) }} as company_size_sk,
         c.company_size_id as company_size_nk,
         c.company_size_description,

@@ -15,7 +15,7 @@ with core_base as (
         establishment_type_id = '1' as is_headquarters,
         establishment_type_id = '2' as is_branch,
         registration_status_id,
-        registration_status_reason_code,
+        case when registration_status_reason_code = '32' then '00' else registration_status_reason_code end as registration_status_reason_code,
         registration_status_date,
         activity_start_date,
         main_cnae_code,
@@ -34,7 +34,7 @@ addresses_base as (
 
     select
         cnpj_id,
-        coalesce(country_code, "105") as country_code,
+        lpad(coalesce(country_code, '105'), 3, '0') as country_code,
         state_abbreviation,
         postal_code,
         nullif(concat_ws(' ', trim(address_type), trim(street_name)), '') as address,
