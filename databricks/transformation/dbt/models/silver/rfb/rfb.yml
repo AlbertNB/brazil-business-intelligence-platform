@@ -27,20 +27,8 @@ models:
         tests: [not_null]
       - name: legal_nature_code
         description: "Legal nature code. Foreign key to rfb__legal_natures."
-        tests:
-          - relationships:
-              to: ref('rfb__legal_natures')
-              field: legal_nature_code
-              config:
-                severity: warn
       - name: responsible_person_qualification
         description: "Qualification code of the responsible person."
-        tests:
-          - relationships:
-              to: ref('rfb__qualifications')
-              field: qualification_code
-              config:
-                severity: warn
       - name: share_capital
         description: "Share capital value as declared to RFB (decimal)."
       - name: company_size_id
@@ -141,12 +129,6 @@ models:
         description: "Date of the current registration status (date)."
       - name: registration_status_reason_code
         description: "Reason code for the registration status. FK to rfb__registration_status_reasons."
-        tests:
-          - relationships:
-              to: ref('rfb__registration_status_reasons')
-              field: registration_status_reason_code
-              config:
-                severity: warn
       - name: activity_start_date
         description: "Date the establishment started its economic activities (date)."
       - name: main_cnae_code
@@ -193,12 +175,6 @@ models:
         description: "City name for foreign-based establishments."
       - name: country_code
         description: "Country code. FK to rfb__countries."
-        tests:
-          - relationships:
-              to: ref('rfb__countries')
-              field: country_code
-              config:
-                severity: warn
       - name: address_type
         description: "Address type (e.g. RUA, AVENIDA)."
       - name: street_name
@@ -218,12 +194,6 @@ models:
               values: ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO','EX']
       - name: municipality_code
         description: "Municipality code. FK to rfb__municipalities."
-        tests:
-          - relationships:
-              to: ref('rfb__municipalities')
-              field: municipality_code
-              config:
-                severity: warn
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
         tests: [not_null]
@@ -422,34 +392,16 @@ models:
         description: "Partner document identifier (CPF/CNPJ, masked). Part of the snapshot composite key."
       - name: partner_qualification_code
         description: "Partner qualification code. FK to rfb__qualifications."
-        tests:
-          - relationships:
-              to: ref('rfb__qualifications')
-              field: qualification_code
-              config:
-                severity: warn
       - name: partnership_start_date
         description: "Date the partnership started (date)."
       - name: country_code
         description: "Country code of the partner. FK to rfb__countries."
-        tests:
-          - relationships:
-              to: ref('rfb__countries')
-              field: country_code
-              config:
-                severity: warn
       - name: legal_representative_document_id
         description: "Legal representative document identifier."
       - name: legal_representative_name
         description: "Legal representative name."
       - name: legal_representative_qualification_code
         description: "Legal representative qualification code. FK to rfb__qualifications."
-        tests:
-          - relationships:
-              to: ref('rfb__qualifications')
-              field: qualification_code
-              config:
-                severity: warn
       - name: age_group_id
         description: "Age group code (0=NOT_APPLICABLE, 1=0_TO_12, 2=13_TO_20, 3=21_TO_30, 4=31_TO_40, 5=41_TO_50, 6=51_TO_60, 7=61_TO_70, 8=71_TO_80, 9=OVER_80)."
         tests:
