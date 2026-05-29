@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: rfb__establishment_activities
+    description: >
+      CNAE economic activity codes per establishment from RFB (silver layer).
+      Maintains snapshot history by _reference_month.
+      Partitioned by _reference_month in Databricks.
+      One row per CNPJ + is_main_activity + cnae_code + _reference_month combination (main and secondary activities exploded).
+      FK to rfb__establishment_core via cnpj.
+      Merged incrementally.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, is_main_activity, cnae_code, _reference_month]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnae_code) = 7
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Part of the snapshot composite key."
+        tests:
+          - not_null
+
+      - name: is_main_activity
+        description: "True if this is the main CNAE activity; false if secondary. Part of the snapshot composite key."
+        tests: [not_null]
+
+      - name: cnae_code
+        description: "CNAE economic activity code. Part of the snapshot composite key."
+        tests: [not_null]
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: ibge__geolocation
+    description: "Curated IBGE geospatial GeoJSON dataset (silver layer), with feature-level extraction from features JSON and deduplication by location_type + location_id."
+    columns:
+      - name: location_type
+        description: "Geographic granularity of the GeoJSON payload (municipality, state, country)."
+        tests:
+          - not_null
+
+      - name: geojson_type
+        description: "GeoJSON top-level type (expected FeatureCollection)."
+        tests:
+          - not_null
+
+      - name: feature_type
+        description: "GeoJSON feature type for each exploded feature (expected Feature)."
+        tests:
+          - not_null
+
+      - name: geometry_type
+        description: "Geometry type (Polygon or MultiPolygon)."
+        tests:
+          - not_null
+
+      - name: geometry_geojson
+        description: "Complete GeoJSON geometry object serialized as JSON string, including coordinates."
+        tests: [not_null]
+
+      - name: geometry_source_format
+        description: "Source format of the geometry data (always 'geoJSON')."
+        tests:
+          - not_null
+
+      - name: location_id
+        description: "IBGE area code extracted from feature properties."
+        tests: [not_null, unique]
+
+      - name: _extraction_ts
+        description: "Extraction timestamp from the source API."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

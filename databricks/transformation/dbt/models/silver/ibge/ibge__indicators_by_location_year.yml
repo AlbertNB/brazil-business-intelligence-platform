@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: ibge__indicators_by_location_year
+    description: "Flattened and deduplicated IBGE indicator results by location and year (silver layer). One row per location + indicator + reference year, keeping the latest extraction."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns: [location_id, indicator_id, reference_year]
+    columns:
+      - name: location_id
+        description: "IBGE location identifier (2-digit state code or 7-digit municipality code)."
+        tests: [not_null]
+
+      - name: reference_year
+        description: "Reference year of the indicator value."
+        tests: [not_null]
+
+      - name: indicator_id
+        description: "IBGE indicator identifier."
+        tests: [not_null]
+
+      - name: metric_value
+        description: "Numeric indicator value."
+        tests: [not_null]
+
+      - name: _extraction_ts
+        description: "Extraction timestamp from the source API."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

@@ -45,16 +45,16 @@ models:
         description: "Macro-region abbreviation."
 
       - name: mesoregion_id
-        description: "IBGE mesoregion identifier. Populated for municipalities; null for states."
+        description: "IBGE mesoregion identifier. Populated for municipalities; null for states. Deprecated by IBGE."
 
       - name: mesoregion_name
-        description: "Mesoregion name. Populated for municipalities; null for states."
+        description: "Mesoregion name. Populated for municipalities; null for states. Deprecated by IBGE."
 
       - name: microregion_id
-        description: "IBGE microregion identifier. Populated for municipalities; null for states."
+        description: "IBGE microregion identifier. Populated for municipalities; null for states. Deprecated by IBGE."
 
       - name: microregion_name
-        description: "Microregion name. Populated for municipalities; null for states."
+        description: "Microregion name. Populated for municipalities; null for states. Deprecated by IBGE."
 
       - name: immediate_region_id
         description: "IBGE immediate region identifier. Populated for municipalities; null for states."

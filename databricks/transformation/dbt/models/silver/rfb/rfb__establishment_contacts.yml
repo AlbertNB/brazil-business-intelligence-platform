@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: rfb__establishment_contacts
+    description: >
+      Contact information (phone, fax, email) for each establishment from RFB (silver layer).
+      Maintains snapshot history by _reference_month.
+      Partitioned by _reference_month in Databricks.
+      One row per CNPJ and _reference_month. FK to rfb__establishment_core via cnpj.
+      Merged incrementally.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, _reference_month]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Business key repeated across monthly snapshots."
+        tests:
+          - not_null
+
+      - name: phone_area_code_1
+        description: "Area code (DDD) for primary phone."
+
+      - name: phone_number_1
+        description: "Primary phone number."
+
+      - name: phone_area_code_2
+        description: "Area code (DDD) for secondary phone."
+
+      - name: phone_number_2
+        description: "Secondary phone number."
+
+      - name: fax_area_code
+        description: "Area code (DDD) for fax."
+
+      - name: fax_number
+        description: "Fax number."
+
+      - name: email
+        description: "Contact email address."
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: rfb__registration_status_reasons
+    description: >
+      Reference table of registration status reasons (motivos de situação cadastral) from RFB (silver layer).
+      Full refresh. Deduplicated by registration_status_reason_code.
+    columns:
+      - name: registration_status_reason_code
+        description: "Registration status reason code. Natural key."
+        tests: [not_null, unique]
+
+      - name: registration_status_reason_description
+        description: "Official description of the registration status reason."
+        tests: [not_null]
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

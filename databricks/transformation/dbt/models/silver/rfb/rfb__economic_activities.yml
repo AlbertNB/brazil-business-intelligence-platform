@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: rfb__economic_activities
+    description: >
+      Reference table of CNAE economic activities as coded by RFB (silver layer).
+      Full refresh. Deduplicated by economic_activity_code.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(economic_activity_code) = 7
+    columns:
+      - name: economic_activity_code
+        description: "RFB economic activity code. Natural key."
+        tests: [not_null, unique]
+
+      - name: economic_activity_description
+        description: "Economic activity description as used in the CNPJ dataset."
+        tests: [not_null]
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: ibge__states
+    description: "Curated Brazilian states (UF) dataset from IBGE (silver layer). Deduplicated by natural key."
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "length(cast(state_id as string)) = 2"
+    columns:
+      - name: state_id
+        description: "IBGE state (UF) identifier (natural key)."
+        tests: [not_null, unique]
+
+      - name: state_name
+        description: "State name."
+        tests: [not_null]
+
+      - name: state_abbreviation
+        description: "State abbreviation (UF sigla)."
+        tests: [not_null]
+
+      - name: region_id
+        description: "IBGE macro region identifier."
+        tests: [not_null]
+
+      - name: region_name
+        description: "IBGE macro region name."
+        tests: [not_null]
+
+      - name: region_abbreviation
+        description: "IBGE macro region abbreviation."
+        tests: [not_null]
+
+      - name: _extraction_ts
+        description: "Extraction timestamp from the source API."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

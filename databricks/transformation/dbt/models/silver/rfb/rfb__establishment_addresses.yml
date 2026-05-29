@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: rfb__establishment_addresses
+    description: >
+      Address data for each establishment (CNPJ completo) from RFB (silver layer).
+      Maintains snapshot history by _reference_month.
+      Partitioned by _reference_month in Databricks.
+      One row per CNPJ and _reference_month. FK to rfb__establishment_core via cnpj.
+      Merged incrementally.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [cnpj_id, _reference_month]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(cnpj_id) = 14
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "{{ rfb_cnpj_dv_is_valid('cnpj_id') }}"
+          config:
+            severity: warn
+    columns:
+      - name: cnpj_id
+        description: "Full 14-digit CNPJ. FK to rfb__establishment_core. Business key repeated across monthly snapshots."
+        tests:
+          - not_null
+
+      - name: foreign_city_name
+        description: "City name for foreign-based establishments."
+
+      - name: country_code
+        description: "Country code. FK to rfb__countries."
+
+      - name: address_type
+        description: "Address type (e.g. RUA, AVENIDA)."
+
+      - name: street_name
+        description: "Street name."
+
+      - name: street_number
+        description: "Street number."
+
+      - name: address_complement
+        description: "Address complement."
+
+      - name: neighborhood
+        description: "Neighborhood (bairro)."
+
+      - name: postal_code
+        description: "Brazilian postal code (CEP, 8 digits)."
+
+      - name: state_abbreviation
+        description: "State abbreviation (UF)."
+
+      - name: municipality_code
+        description: "Municipality code. FK to rfb__municipalities."
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

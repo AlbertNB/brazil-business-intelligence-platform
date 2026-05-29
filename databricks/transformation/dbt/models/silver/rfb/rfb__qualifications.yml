@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: rfb__qualifications
+    description: >
+      Reference table of partner qualification codes (qualificações de sócios) from RFB (silver layer).
+      Full refresh. Deduplicated by qualification_code.
+    columns:
+      - name: qualification_code
+        description: "Qualification code. Natural key."
+        tests: [not_null, unique]
+
+      - name: qualification_description
+        description: "Official qualification description."
+        tests: [not_null]
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]
