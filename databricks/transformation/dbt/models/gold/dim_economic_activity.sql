@@ -71,7 +71,7 @@ final as (
         rfb.economic_activity_nk,
         rfb.economic_activity_description      as economic_activity_name,
 
-        coalesce(ibge_exact.class_id, ibge_by_class.class_id) as class_id,
+        case when rfb.economic_activity_nk = '8888888' then '00000' else coalesce(ibge_exact.class_id, ibge_by_class.class_id) end as class_id,
         coalesce(ibge_exact.class_description, ibge_by_class.class_description, 'NOT_INFORMED') as class_description,
         coalesce(
             ibge_exact.class_notes,
@@ -79,13 +79,13 @@ final as (
             cast(array() as array<string>)
         ) as class_notes,
 
-        coalesce(ibge_exact.group_id, ibge_by_class.group_id) as group_id,
+        case when rfb.economic_activity_nk = '8888888' then '000' else coalesce(ibge_exact.group_id, ibge_by_class.group_id) end as group_id,
         coalesce(ibge_exact.group_description, ibge_by_class.group_description, 'NOT_INFORMED') as group_description,
 
-        coalesce(ibge_exact.division_id, ibge_by_class.division_id) as division_id,
+        case when rfb.economic_activity_nk = '8888888' then '00' else coalesce(ibge_exact.division_id, ibge_by_class.division_id) end as division_id,
         coalesce(ibge_exact.division_description, ibge_by_class.division_description, 'NOT_INFORMED') as division_description,
 
-        coalesce(ibge_exact.section_id, ibge_by_class.section_id) as section_id,
+        case when rfb.economic_activity_nk = '8888888' then '0' else coalesce(ibge_exact.section_id, ibge_by_class.section_id) end as section_id,
         coalesce(ibge_exact.section_description, ibge_by_class.section_description, 'NOT_INFORMED') as section_description,
 
         coalesce(ibge_exact.economic_activity_details, cast(array() as array<string>)) as economic_activity_details,

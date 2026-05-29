@@ -12,13 +12,8 @@ with source as (
         trim(cast(_c2 as string))                                                   as legal_nature_code,
         trim(cast(_c3 as string))                                                   as responsible_person_qualification,
         try_cast(nullif(replace(trim(cast(_c4 as string)), ',', '.'), '') as decimal(18, 2)) as share_capital,
-        trim(cast(_c5 as string))                                                   as company_size_id,
-        case trim(cast(_c5 as string))
-            when '00' then 'NOT_INFORMED'
-            when '01' then 'MICRO_COMPANY'
-            when '03' then 'SMALL_COMPANY'
-            when '05' then 'OTHER'
-        end                                                                         as company_size_description,
+        {{ rfb_company_size_id('_c5') }}                                            as company_size_id,
+        {{ rfb_company_size_description('_c5') }}                                   as company_size_description,
         trim(cast(_c6 as string))                                                   as federative_entity_responsible,
         trim(cast(_reference_month as string))                                       as _reference_month,
         _ingestion_ts
