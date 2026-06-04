@@ -4,9 +4,9 @@
 ) }}
 
 select
-    {{ generate_sk(['company_size_id']) }} as company_size_sk,
-    company_size_id as company_size_nk,
-    company_size_description,
+    {{ generate_sk(["coalesce(company_size_id, '00')"]) }} as company_size_sk,
+    coalesce(company_size_id, '00')                        as company_size_nk,
+    coalesce(company_size_description, 'NOT_INFORMED')     as company_size_description,
     current_timestamp() as _updated_at
 from {{ ref('rfb__company_sizes') }}
 
