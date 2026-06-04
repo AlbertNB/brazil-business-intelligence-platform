@@ -1,11 +1,10 @@
 version: 2
 
 models:
-  - name: rfb__bridge_ibge_municipalities
+  - name: bridge_rfb_ibge_municipalities
     description: >
       Bridge table that maps RFB municipality code/name pairs to IBGE municipality identifiers,
       using normalized name matching constrained by state and manual seed-based overrides.
-      Built as table from latest Bronze RFB snapshots plus Silver IBGE municipalities.
     tests:
       - dbt_utils.expression_is_true:
           arguments:
@@ -31,8 +30,7 @@ models:
 
       - name: source_state_abbreviation
         description: "UF abbreviation from the source system (RFB)."
-        tests:
-          - not_null
+        tests: [not_null]
 
       - name: ibge_municipality_id
         description: "Matched municipality id in IBGE dimension."
@@ -49,8 +47,7 @@ models:
 
       - name: match_status
         description: "Matching outcome label: MATCHED when IBGE municipality was found, UNMATCHED otherwise."
-        tests:
-          - not_null
+        tests: [not_null]
 
       - name: _reference_month
         description: "Reference month of the RFB extract (YYYY-MM)."
