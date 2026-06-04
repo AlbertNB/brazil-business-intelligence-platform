@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: rfb__company_sizes
+    description: >
+      Reference table of company size codes derived from the latest RFB company snapshot (silver layer).
+      Full refresh. Deduplicated by company_size_id.
+    columns:
+      - name: company_size_id
+        description: "Company size code. Natural key."
+        tests:
+          - not_null
+          - unique
+
+      - name: company_size_description
+        description: "Company size label in uppercase."
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Silver transactional source."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

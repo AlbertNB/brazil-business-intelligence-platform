@@ -1,0 +1,51 @@
+version: 2
+
+models:
+  - name: rfb__simplified_tax_regime
+    description: >
+      Curated dataset of Simples Nacional and MEI registration data from RFB (silver layer).
+      Maintains snapshot history by _reference_month.
+      Partitioned by _reference_month in Databricks.
+      Deduplicated by company_root_id within each snapshot and merged incrementally.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [company_root_id, _reference_month]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
+    columns:
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits). Business key repeated across monthly snapshots."
+        tests:
+          - not_null
+
+      - name: is_simples_nacional
+        description: "Whether the company is opted into Simples Nacional (true/false)."
+
+      - name: simples_nacional_option_date
+        description: "Date the company opted into Simples Nacional (date)."
+
+      - name: simples_nacional_exclusion_date
+        description: "Date the company was excluded from Simples Nacional (date)."
+
+      - name: is_mei
+        description: "Whether the company is opted into MEI (true/false)."
+
+      - name: mei_option_date
+        description: "Date the company opted into MEI (date)."
+
+      - name: mei_exclusion_date
+        description: "Date the company was excluded from MEI (date)."
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

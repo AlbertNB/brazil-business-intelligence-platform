@@ -3,6 +3,13 @@ version: 2
 models:
   - name: dim_company
     description: "Gold company dimension from the latest RFB company snapshot, enriched with Simples Nacional and MEI tax regime information."
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "_reference_month = (select max(_reference_month) from {{ ref('dim_company') }})"
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "share_capital is null or share_capital >= 0"
     columns:
       - name: company_sk
         description: "Deterministic surrogate key generated from company_root_nk."
@@ -18,7 +25,11 @@ models:
 
       - name: legal_nature_sk
         description: "Surrogate key of the legal nature (FK to dim_legal_nature)."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_legal_nature')
+              field: legal_nature_sk
 
       - name: legal_nature_nk
         description: "Natural key — RFB legal nature code."
@@ -26,7 +37,11 @@ models:
 
       - name: company_size_sk
         description: "Surrogate key of the company size tier (FK to dim_company_size)."
-        tests: [not_null]
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_company_size')
+              field: company_size_sk
 
       - name: company_size_nk
         description: "Natural key — RFB company size code (01 = micro, 03 = small, 05 = other)."

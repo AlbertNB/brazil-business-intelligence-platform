@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: rfb__municipalities
+    description: >
+      Reference table of municipalities as coded by RFB (silver layer).
+      Full refresh. Deduplicated by municipality_code.
+    columns:
+      - name: municipality_code
+        description: "RFB municipality code. Natural key."
+        tests: [not_null, unique]
+
+      - name: municipality_name
+        description: "Municipality name as used in the CNPJ dataset."
+        tests: [not_null]
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

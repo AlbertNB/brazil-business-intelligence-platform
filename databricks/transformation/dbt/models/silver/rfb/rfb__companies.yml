@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: rfb__companies
+    description: >
+      Curated dataset of Brazilian companies (CNPJ raiz) from Receita Federal do Brasil (silver layer).
+      Maintains snapshot history by _reference_month.
+      Partitioned by _reference_month in Databricks.
+      Deduplicated by company_root_id within each snapshot and merged incrementally.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [company_root_id, _reference_month]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
+    columns:
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits). Business key repeated across monthly snapshots."
+        tests:
+          - not_null
+
+      - name: legal_name
+        description: "Official company legal name (razão social)."
+        tests: [not_null]
+
+      - name: legal_nature_code
+        description: "Legal nature code. Foreign key to rfb__legal_natures."
+
+      - name: responsible_person_qualification
+        description: "Qualification code of the responsible person."
+
+      - name: share_capital
+        description: "Share capital value as declared to RFB (decimal)."
+
+      - name: company_size_id
+        description: "Company size code (00=NOT_INFORMED, 01=MICRO_COMPANY, 03=SMALL_COMPANY, 05=OTHER)."
+
+      - name: company_size_description
+        description: "Company size label in uppercase (NOT_INFORMED, MICRO_COMPANY, SMALL_COMPANY, OTHER)."
+
+      - name: federative_entity_responsible
+        description: "Federative entity responsible for this company, when applicable."
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

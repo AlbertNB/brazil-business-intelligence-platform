@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: rfb__bridge_ibge_municipalities
+    description: >
+      Bridge table that maps RFB municipality code/name pairs to IBGE municipality identifiers,
+      using normalized name matching constrained by state and manual seed-based overrides.
+      Built as table from latest Bronze RFB snapshots plus Silver IBGE municipalities.
+    tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: source_state_abbreviation = ibge_state_abbreviation
+          config:
+            where: ibge_municipality_id is not null
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: match_status = 'MATCHED'
+          config:
+            severity: warn
+    columns:
+      - name: source_system
+        description: "Origin system identifier for the mapping row."
+        tests: [not_null]
+
+      - name: source_municipality_code
+        description: "Municipality code from the source system (RFB)."
+        tests: [not_null]
+
+      - name: source_municipality_name
+        description: "Municipality name from the source system (RFB)."
+
+      - name: source_state_abbreviation
+        description: "UF abbreviation from the source system (RFB)."
+        tests:
+          - not_null
+
+      - name: ibge_municipality_id
+        description: "Matched municipality id in IBGE dimension."
+
+      - name: ibge_municipality_name
+        description: "Matched municipality name in IBGE dimension."
+
+      - name: ibge_state_abbreviation
+        description: "UF abbreviation from IBGE side for the matched municipality."
+
+      - name: is_override_applied
+        description: "True when municipality matching used a manual override from seed; false otherwise."
+        tests: [not_null]
+
+      - name: match_status
+        description: "Matching outcome label: MATCHED when IBGE municipality was found, UNMATCHED otherwise."
+        tests:
+          - not_null
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

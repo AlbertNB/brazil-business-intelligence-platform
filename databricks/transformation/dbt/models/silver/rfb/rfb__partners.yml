@@ -1,0 +1,81 @@
+version: 2
+
+models:
+  - name: rfb__partners
+    description: >
+      Curated dataset of company partners (quadro societário) from RFB (silver layer).
+      Maintains snapshot history by _reference_month.
+      Partitioned by _reference_month in Databricks.
+      Composite key per snapshot: (company_root_id, partner_name, partner_document_id, _reference_month).
+      Merged incrementally.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [company_root_id, partner_name, partner_document_id, _reference_month]
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: partner_name is not null or partner_document_id is not null
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: length(company_root_id) = 8
+    columns:
+      - name: company_root_id
+        description: "Company root CNPJ (8 digits). Part of the snapshot composite key."
+        tests:
+          - not_null
+
+      - name: partner_identifier_id
+        description: "Partner identifier type code (1=LEGAL_ENTITY, 2=INDIVIDUAL, 3=FOREIGNER)."
+        tests:
+          - not_null
+
+      - name: partner_identifier_description
+        description: "Partner identifier type label in uppercase (LEGAL_ENTITY, INDIVIDUAL, FOREIGNER)."
+        tests:
+          - not_null
+
+      - name: partner_name
+        description: "Partner name. Part of the snapshot composite key."
+
+      - name: partner_document_id
+        description: "Partner document identifier (CPF/CNPJ, masked). Part of the snapshot composite key."
+
+      - name: partner_qualification_code
+        description: "Partner qualification code. FK to rfb__qualifications."
+
+      - name: partnership_start_date
+        description: "Date the partnership started (date)."
+
+      - name: country_code
+        description: "Country code of the partner. FK to rfb__countries."
+
+      - name: legal_representative_document_id
+        description: "Legal representative document identifier."
+
+      - name: legal_representative_name
+        description: "Legal representative name."
+
+      - name: legal_representative_qualification_code
+        description: "Legal representative qualification code. FK to rfb__qualifications."
+
+      - name: age_group_id
+        description: "Age group code (0=NOT_APPLICABLE, 1=0_TO_12, 2=13_TO_20, 3=21_TO_30, 4=31_TO_40, 5=41_TO_50, 6=51_TO_60, 7=61_TO_70, 8=71_TO_80, 9=OVER_80)."
+        tests:
+          - not_null
+
+      - name: age_group_description
+        description: "Age group label in uppercase."
+        tests:
+          - not_null
+
+      - name: _reference_month
+        description: "Reference month of the RFB extract (YYYY-MM)."
+        tests: [not_null]
+
+      - name: _ingestion_ts
+        description: "Ingestion timestamp from Bronze."
+        tests: [not_null]
+
+      - name: _load_ts
+        description: "Timestamp when this model row was loaded."
+        tests: [not_null]

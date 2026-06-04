@@ -59,6 +59,7 @@ resources:
             commands:
               - dbt deps
               - dbt run --select tag:gold,tag:rfb+
+              - dbt test --select tag:gold,tag:rfb+
       queue:
         enabled: true
       environments:
