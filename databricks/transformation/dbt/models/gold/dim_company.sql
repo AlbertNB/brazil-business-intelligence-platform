@@ -53,9 +53,9 @@ final as (
         c.legal_name as company_name,
         {{ generate_sk(['c.legal_nature_code']) }} as legal_nature_sk,
         c.legal_nature_code as legal_nature_nk,
-        {{ generate_sk(['c.company_size_id']) }} as company_size_sk,
-        c.company_size_id as company_size_nk,
-        c.company_size_description,
+        {{ generate_sk(["coalesce(c.company_size_id, '00')"]) }}    as company_size_sk,
+        coalesce(c.company_size_id, '00')                          as company_size_nk,
+        coalesce(c.company_size_description, 'NOT_INFORMED')       as company_size_description,
         c.share_capital,
         case
             when coalesce(s.is_mei, false) then true

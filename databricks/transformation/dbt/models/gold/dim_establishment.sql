@@ -77,7 +77,7 @@ municipality_bridge as (
     select
         source_municipality_code as municipality_code,
         ibge_municipality_id
-    from {{ ref('rfb__bridge_ibge_municipalities') }}
+    from {{ ref('bridge_rfb_ibge_municipalities') }}
     where match_status = 'MATCHED'
 
 ),

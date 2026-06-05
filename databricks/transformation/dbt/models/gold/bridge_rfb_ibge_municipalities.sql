@@ -1,63 +1,47 @@
 {{ config(
-    materialized = 'table'
+    materialized = 'table',
+    tags = ["bridge", "business_registry"]
 ) }}
 
 with overrides as (
 
     select
-        trim(cast(state_abbreviation as string)) as state_abbreviation,
-        trim(cast(rfb_municipality_name_norm as string)) as rfb_municipality_name_norm,
-        trim(cast(ibge_municipality_name_norm as string)) as ibge_municipality_name_norm
+        trim(cast(state_abbreviation as string))           as state_abbreviation,
+        trim(cast(rfb_municipality_name_norm as string))   as rfb_municipality_name_norm,
+        trim(cast(ibge_municipality_name_norm as string))  as ibge_municipality_name_norm
     from {{ ref('rfb__bridge_ibge_municipalities_overrides') }}
 
 ),
 
 rfb_establishments_latest as (
 
-    select
-        trim(cast(_c19 as string)) as state_abbreviation,
-        trim(cast(_c20 as string)) as municipality_code,
-        trim(cast(_reference_month as string)) as _reference_month
-    from {{ source('bronze', 'rfb__estabelecimentos') }}
+    select distinct
+        state_abbreviation,
+        municipality_code
+    from {{ ref('rfb__establishment_addresses') }}
     where _reference_month = (
         select max(_reference_month)
-        from {{ source('bronze', 'rfb__estabelecimentos') }}
+        from {{ ref('rfb__establishment_addresses') }}
     )
-      and _c19 is not null
-      and _c20 is not null
-
-),
-
-rfb_municipalities_latest as (
-
-    select
-        trim(cast(_c0 as string)) as municipality_code,
-        trim(cast(_c1 as string)) as municipality_name,
-        trim(cast(_reference_month as string)) as _reference_month,
-        _ingestion_ts
-    from {{ source('bronze', 'rfb__municipios') }}
-    where _reference_month = (
-        select max(_reference_month)
-        from {{ source('bronze', 'rfb__municipios') }}
-    )
-      and _c0 is not null
+      and state_abbreviation is not null
+      and municipality_code is not null
+      and state_abbreviation != 'EX'
+      and not (municipality_code = '6969' and state_abbreviation = 'PA')
 
 ),
 
 rfb as (
 
-    select distinct
+    select
         e.state_abbreviation as source_state_abbreviation,
         e.municipality_code as source_municipality_code,
         m.municipality_name as source_municipality_name,
-        m._reference_month as _reference_month,
-        m._ingestion_ts as _ingestion_ts,
+        m._reference_month,
+        m._ingestion_ts,
         {{ rfb_normalize_municipality_name('m.municipality_name') }} as municipality_name_norm
     from rfb_establishments_latest e
-    left join rfb_municipalities_latest m
+    left join {{ ref('rfb__municipalities') }} m
         on e.municipality_code = m.municipality_code
-    where not (e.municipality_code = '6969' and e.state_abbreviation = 'PA')
-      and e.state_abbreviation != 'EX'
 
 ),
 

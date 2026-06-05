@@ -7,9 +7,8 @@ models:
       Full refresh. Deduplicated by company_size_id.
     columns:
       - name: company_size_id
-        description: "Company size code. Natural key."
+        description: "Company size code. Natural key. Null when not informed in source."
         tests:
-          - not_null
           - unique
 
       - name: company_size_description
