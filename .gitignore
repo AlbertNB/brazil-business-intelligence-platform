@@ -97,6 +97,7 @@ htmlcov/
 *.pem
 *.key
 *.crt
+visualization/.streamlit/secrets.toml
 
 # =========================
 # Terraform
