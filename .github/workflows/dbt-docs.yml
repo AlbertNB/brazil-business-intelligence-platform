@@ -48,6 +48,7 @@ jobs:
         working-directory: databricks/transformation/dbt
         run: |
           dbt deps
+          dbt parse
           dbt docs generate --empty-catalog --no-compile
 
       - name: Upload Pages artifact
