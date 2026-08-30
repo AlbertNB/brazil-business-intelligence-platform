@@ -74,11 +74,15 @@ See terraform.tfvars.example for a template.
 
 ## Commands
 
+```bash
 terraform init
 terraform plan -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
+```
 
 Optional destroy flow:
 
+```bash
 terraform plan -destroy -var-file=terraform.tfvars
 terraform destroy -var-file=terraform.tfvars
+```

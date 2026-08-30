@@ -38,7 +38,7 @@ Use the following naming conventions for models and physical tables across all l
 	- Use snake_case
 
 - Example mapping:
-	- `bronze.rfb__estabelecimentos` -> `silver.rfb__establishments_core`
+	- `bronze.rfb__estabelecimentos` -> `silver.rfb__establishment_core`
 	- `bronze.rfb__estabelecimentos` -> `silver.rfb__establishment_addresses`
 	- `bronze.rfb__estabelecimentos` -> `silver.rfb__establishment_contacts`
 	- `bronze.rfb__estabelecimentos` -> `silver.rfb__establishment_activities`
@@ -68,8 +68,8 @@ The Gold layer follows a star schema modeling approach.
 	- `dim_location`
 	- `dim_company`
 	- `dim_economic_activity`
+	- `fact_establishment_snapshot`
 	- `fact_location_demographics`
-	- `fact_company_registration`
 
 ## Surrogate and Natural Key Naming
 

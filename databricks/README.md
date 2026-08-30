@@ -40,6 +40,8 @@ Variables are declared in `databricks.yml` and resolved per target:
 | `LANDING_ROOT` | S3 path where raw source files are dropped |
 | `AUTOLOADER_ROOT` | S3 path for Auto Loader schema and checkpoint metadata |
 | `BRONZE_ROOT` | S3 path where Delta Bronze tables are written |
+| `DBT_WAREHOUSE_ID` | Databricks SQL Warehouse ID used by dbt tasks |
+| `DBT_CATALOG` | Unity Catalog catalog used by ingestion and dbt tasks |
 
 ## Deploy
 
@@ -55,7 +57,7 @@ databricks bundle run -t prod <job_name>
 
 ## How It Works
 
-The `bronze_ingestion.py` script uses Databricks Auto Loader (`cloudFiles`) to incrementally ingest JSON files from the landing zone into Delta Bronze tables under Unity Catalog.
+The `bronze_ingestion.py` script uses Databricks Auto Loader (`cloudFiles`) to incrementally ingest files from the landing zone into Delta Bronze tables under Unity Catalog. It supports JSON (IBGE streams) and CSV with custom encoding and delimiter (RFB streams).
 
 For each stream (subfolder) discovered under `{LANDING_ROOT}/{source}/`, it:
 1. Reads new JSON files using `trigger(availableNow=True)`
