@@ -24,8 +24,25 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dbt-core
-        run: pip install dbt-core==1.11.2
+      - name: Install dbt
+        run: pip install dbt-core==1.11.2 dbt-databricks==1.11.4
+
+      - name: Create dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<'EOF'
+          datalake:
+            target: prod
+            outputs:
+              prod:
+                type: databricks
+                host: placeholder.cloud.databricks.com
+                http_path: /sql/1.0/warehouses/placeholder
+                token: placeholder-token
+                catalog: bbip_prod
+                schema: default
+                threads: 4
+          EOF
 
       - name: Generate dbt docs
         working-directory: databricks/transformation/dbt
