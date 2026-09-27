@@ -8,10 +8,15 @@ include:
 variables:
   LANDING_ROOT:
     description: S3 landing root
+  STORAGE_MODE:
+    description: Bronze ingestion storage mode, "external" (writes to BRONZE_ROOT) or "managed" (Unity Catalog owns table storage)
+    default: managed
   AUTOLOADER_ROOT:
-    description: S3 Auto Loader root
+    description: Auto Loader root for schema/checkpoints. S3 path for external storage_mode, UC volume path for managed storage_mode.
+    default: ""
   BRONZE_ROOT:
-    description: S3 bronze root
+    description: S3 bronze root (external storage_mode only; leave empty for managed)
+    default: ""
   DBT_WAREHOUSE_ID:
     description: Databricks SQL Warehouse ID used by dbt tasks
   DBT_CATALOG:

@@ -53,3 +53,7 @@ output "uc_schemas" {
 output "uc_role_arn" {
   value = module.databricks_uc.uc_role_arn
 }
+
+output "uc_autoloader_volume_path" {
+  value = module.databricks_uc.autoloader_volume_path
+}

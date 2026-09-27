@@ -24,3 +24,8 @@ output "schemas" {
 output "uc_role_arn" {
   value = aws_iam_role.databricks_uc_role.arn
 }
+
+output "autoloader_volume_path" {
+  description = "UC managed volume root for Auto Loader schema/checkpoint state. Null in external storage_mode."
+  value       = local.is_external ? null : "/Volumes/${databricks_catalog.this.name}/${databricks_schema.layers["bronze"].name}/${databricks_volume.autoloader[0].name}"
+}

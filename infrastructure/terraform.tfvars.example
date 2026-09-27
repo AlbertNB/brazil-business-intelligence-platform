@@ -1,6 +1,7 @@
 project_name                   = "bbip"
 environment                    = "prod"
 aws_region                     = "us-east-2"
+storage_mode                   = "managed" # "managed" (default, only landing bucket + UC-managed storage) or "external" (landing/bronze/silver/gold/metadata buckets + UC external locations)
 
 databricks_host                = "https://dbc-xxxxxxxx-xxxx.cloud.databricks.com"
 databricks_token               = "replace-me"

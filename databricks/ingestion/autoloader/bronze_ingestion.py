@@ -7,7 +7,7 @@ from pyspark.sql import functions as F
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Bronze loader for JSON sources using Databricks Auto Loader (Unity Catalog–safe).")
+    p = argparse.ArgumentParser(description="Bronze loader for JSON/CSV sources using Databricks Auto Loader (Unity Catalog–safe).")
 
     # What to load
     p.add_argument("--source", required=True, help="Source name (e.g. ibge, rfb).")
@@ -38,16 +38,44 @@ def parse_args() -> argparse.Namespace:
         help="Optional Bronze partition column (e.g. reference_month). If empty, no partitioning is applied."
     )
 
-    # Storage roots (required)
+    # Storage mode
+    p.add_argument(
+        "--storage_mode",
+        required=True,
+        choices=["external", "managed"],
+        help=(
+            "'external' writes Bronze Delta files to an explicit S3 path (requires --bronze_root). "
+            "'managed' lets Unity Catalog own the table's storage (--bronze_root is ignored)."
+        ),
+    )
+
+    # Storage roots
     p.add_argument("--landing_root", required=True, help="Landing root path (e.g. s3://bbip-landing-prod-<account>-<region>/).")
-    p.add_argument("--autoloader_root", required=True, help="Auto Loader root for schema/checkpoints (e.g. s3://bbip-metadata-prod-<account>-<region>/autoloader).")
-    p.add_argument("--bronze_root", required=True, help="Bronze root path (e.g. s3://bbip-bronze-prod-<account>-<region>/).")
+    p.add_argument(
+        "--autoloader_root",
+        required=True,
+        help=(
+            "Auto Loader root for schema/checkpoint state. storage_mode=external: S3 bucket path "
+            "(e.g. s3://bbip-metadata-prod-<account>-<region>/autoloader). storage_mode=managed: "
+            "UC volume path (e.g. /Volumes/bbip_prod/bronze/autoloader)."
+        ),
+    )
+    p.add_argument(
+        "--bronze_root",
+        default="",
+        help="Bronze root path (e.g. s3://bbip-bronze-prod-<account>-<region>/). Required when --storage_mode=external.",
+    )
 
     # Unity Catalog
     p.add_argument("--catalog", default="bbip_prod", help="Unity Catalog catalog name.")
     p.add_argument("--target_schema", default="bronze", help="Target schema (database) name inside catalog.")
 
-    return p.parse_args()
+    args = p.parse_args()
+
+    if args.storage_mode == "external" and not args.bronze_root:
+        p.error("--bronze_root is required when --storage_mode=external.")
+
+    return args
 
 
 def sql_safe(name: str) -> str:
@@ -55,7 +83,11 @@ def sql_safe(name: str) -> str:
 
 
 def join_path(*parts: str) -> str:
-    return "/".join([p.strip("/").replace("\\", "/") for p in parts if p])
+    parts = [p.replace("\\", "/") for p in parts if p]
+    if not parts:
+        return ""
+    # Keep the first part's leading "/" (e.g. /Volumes/...); strip it from the rest.
+    return "/".join([parts[0].rstrip("/")] + [p.strip("/") for p in parts[1:]])
 
 
 def build_paths(args: argparse.Namespace, stream: str) -> Dict[str, str]:
@@ -66,18 +98,21 @@ def build_paths(args: argparse.Namespace, stream: str) -> Dict[str, str]:
 
     table = f"{args.catalog}.{args.target_schema}.{table_name}"
 
-    out = join_path(args.bronze_root, sql_safe(args.source), table_name) + "/"
     sch = join_path(args.autoloader_root, sql_safe(args.source), table_name, "schema") + "/"
     ckpt = join_path(args.autoloader_root, sql_safe(args.source), table_name, "checkpoint") + "/"
 
-    return {
+    paths = {
         "src": src,
         "schema_loc": sch,
         "checkpoint": ckpt,
-        "out": out,
         "table": table,
         "landing_base": base + "/"
     }
+
+    if args.storage_mode == "external":
+        paths["out"] = join_path(args.bronze_root, sql_safe(args.source), table_name) + "/"
+
+    return paths
 
 
 def list_streams_from_landing(dbutils, landing_base: str) -> List[str]:
@@ -147,7 +182,6 @@ def run_one_stream(spark: SparkSession, args: argparse.Namespace, stream: str, p
         df.writeStream
           .format("delta")
           .option("checkpointLocation", paths["checkpoint"])
-          .option("path", paths["out"])
           .outputMode("append")
           .trigger(availableNow=True)
     )
@@ -155,25 +189,35 @@ def run_one_stream(spark: SparkSession, args: argparse.Namespace, stream: str, p
     if partition_col:
         writer = writer.partitionBy(partition_col)
 
-    q = writer.start()
-    q.awaitTermination()
+    if args.storage_mode == "external":
+        q = writer.option("path", paths["out"]).start()
+        q.awaitTermination()
 
-    spark.sql(f"""
-      CREATE TABLE IF NOT EXISTS {paths["table"]}
-      USING DELTA
-      LOCATION '{paths["out"]}'
-    """)
+        spark.sql(f"""
+          CREATE TABLE IF NOT EXISTS {paths["table"]}
+          USING DELTA
+          LOCATION '{paths["out"]}'
+        """)
+    else:
+        # No explicit storage path: toTable lets Unity Catalog create/manage the
+        # table's storage under the schema's (or metastore's) default location.
+        q = writer.toTable(paths["table"])
+        q.awaitTermination()
 
-    return {
+    result = {
         "source": args.source,
         "stream": stream,
         "table": paths["table"],
         "landing": paths["src"],
-        "bronze_path": paths["out"],
         "checkpoint": paths["checkpoint"],
         "schema_location": paths["schema_loc"],
         "partition_by_column": partition_col,
     }
+
+    if args.storage_mode == "external":
+        result["bronze_path"] = paths["out"]
+
+    return result
 
 
 def main():

@@ -1,7 +1,8 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  account_id = data.aws_caller_identity.current.account_id
+  account_id  = data.aws_caller_identity.current.account_id
+  is_external = var.storage_mode == "external"
 
   bucket_names = {
     landing  = "${var.project_name}-landing-${var.environment}-${local.account_id}-${var.aws_region}"
@@ -12,6 +13,8 @@ locals {
   }
 }
 
+# The landing bucket is always required: raw files need somewhere to land
+# before Databricks (managed or external) picks them up.
 resource "aws_s3_bucket" "landing" {
   bucket = local.bucket_names.landing
   tags = {
@@ -20,7 +23,10 @@ resource "aws_s3_bucket" "landing" {
   }
 }
 
+# bronze/silver/gold/metadata buckets only exist in "external" storage_mode.
+# In "managed" mode, Unity Catalog owns this storage instead.
 resource "aws_s3_bucket" "bronze" {
+  count  = local.is_external ? 1 : 0
   bucket = local.bucket_names.bronze
   tags = {
     env   = var.environment
@@ -29,6 +35,7 @@ resource "aws_s3_bucket" "bronze" {
 }
 
 resource "aws_s3_bucket" "silver" {
+  count  = local.is_external ? 1 : 0
   bucket = local.bucket_names.silver
   tags = {
     env   = var.environment
@@ -37,6 +44,7 @@ resource "aws_s3_bucket" "silver" {
 }
 
 resource "aws_s3_bucket" "gold" {
+  count  = local.is_external ? 1 : 0
   bucket = local.bucket_names.gold
   tags = {
     env   = var.environment
@@ -45,6 +53,7 @@ resource "aws_s3_bucket" "gold" {
 }
 
 resource "aws_s3_bucket" "metadata" {
+  count  = local.is_external ? 1 : 0
   bucket = local.bucket_names.metadata
   tags = {
     env   = var.environment
@@ -52,14 +61,38 @@ resource "aws_s3_bucket" "metadata" {
   }
 }
 
+# Existing "external" deployments had these as non-counted resources;
+# this keeps their addresses stable instead of forcing a destroy/recreate.
+moved {
+  from = aws_s3_bucket.bronze
+  to   = aws_s3_bucket.bronze[0]
+}
+
+moved {
+  from = aws_s3_bucket.silver
+  to   = aws_s3_bucket.silver[0]
+}
+
+moved {
+  from = aws_s3_bucket.gold
+  to   = aws_s3_bucket.gold[0]
+}
+
+moved {
+  from = aws_s3_bucket.metadata
+  to   = aws_s3_bucket.metadata[0]
+}
+
 locals {
-  bucket_resources = {
-    landing  = aws_s3_bucket.landing
-    bronze   = aws_s3_bucket.bronze
-    silver   = aws_s3_bucket.silver
-    gold     = aws_s3_bucket.gold
-    metadata = aws_s3_bucket.metadata
-  }
+  bucket_resources = merge(
+    { landing = aws_s3_bucket.landing },
+    local.is_external ? {
+      bronze   = aws_s3_bucket.bronze[0]
+      silver   = aws_s3_bucket.silver[0]
+      gold     = aws_s3_bucket.gold[0]
+      metadata = aws_s3_bucket.metadata[0]
+    } : {}
+  )
 }
 
 resource "aws_s3_bucket_versioning" "all" {
@@ -171,54 +204,60 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
 
 data "aws_iam_policy_document" "databricks_role_policy" {
   statement {
-    sid     = "AllowListBuckets"
-    effect  = "Allow"
-    actions = ["s3:ListAllMyBuckets", "s3:GetBucketLocation"]
+    sid       = "AllowListBuckets"
+    effect    = "Allow"
+    actions   = ["s3:ListAllMyBuckets", "s3:GetBucketLocation"]
     resources = ["*"]
   }
 
   statement {
-    sid     = "AllowLandingBucketAccess"
-    effect  = "Allow"
-    actions = ["s3:ListBucket", "s3:GetBucketLocation"]
+    sid       = "AllowLandingBucketAccess"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket", "s3:GetBucketLocation"]
     resources = [aws_s3_bucket.landing.arn]
   }
 
   statement {
-    sid     = "AllowLandingObjectReadOnly"
-    effect  = "Allow"
-    actions = ["s3:GetObject"]
+    sid       = "AllowLandingObjectReadOnly"
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.landing.arn}/*"]
   }
 
-  statement {
-    sid     = "AllowWritableBucketList"
-    effect  = "Allow"
-    actions = ["s3:ListBucket", "s3:GetBucketLocation"]
-    resources = [
-      aws_s3_bucket.bronze.arn,
-      aws_s3_bucket.silver.arn,
-      aws_s3_bucket.gold.arn,
-      aws_s3_bucket.metadata.arn
-    ]
+  dynamic "statement" {
+    for_each = local.is_external ? [1] : []
+    content {
+      sid     = "AllowWritableBucketList"
+      effect  = "Allow"
+      actions = ["s3:ListBucket", "s3:GetBucketLocation"]
+      resources = [
+        aws_s3_bucket.bronze[0].arn,
+        aws_s3_bucket.silver[0].arn,
+        aws_s3_bucket.gold[0].arn,
+        aws_s3_bucket.metadata[0].arn
+      ]
+    }
   }
 
-  statement {
-    sid     = "AllowWritableObjectAccess"
-    effect  = "Allow"
-    actions = [
-      "s3:GetObject",
-      "s3:PutObject",
-      "s3:DeleteObject",
-      "s3:AbortMultipartUpload",
-      "s3:ListMultipartUploadParts"
-    ]
-    resources = [
-      "${aws_s3_bucket.bronze.arn}/*",
-      "${aws_s3_bucket.silver.arn}/*",
-      "${aws_s3_bucket.gold.arn}/*",
-      "${aws_s3_bucket.metadata.arn}/*"
-    ]
+  dynamic "statement" {
+    for_each = local.is_external ? [1] : []
+    content {
+      sid    = "AllowWritableObjectAccess"
+      effect = "Allow"
+      actions = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ]
+      resources = [
+        "${aws_s3_bucket.bronze[0].arn}/*",
+        "${aws_s3_bucket.silver[0].arn}/*",
+        "${aws_s3_bucket.gold[0].arn}/*",
+        "${aws_s3_bucket.metadata[0].arn}/*"
+      ]
+    }
   }
 }
 
@@ -250,16 +289,16 @@ resource "aws_iam_role" "landing_writer_role" {
 
 data "aws_iam_policy_document" "landing_writer_role_policy" {
   statement {
-    sid     = "AllowLandingBucketList"
-    effect  = "Allow"
-    actions = ["s3:ListBucket", "s3:GetBucketLocation"]
+    sid       = "AllowLandingBucketList"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket", "s3:GetBucketLocation"]
     resources = [aws_s3_bucket.landing.arn]
   }
 
   statement {
-    sid     = "AllowLandingObjectWrite"
-    effect  = "Allow"
-    actions = ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
+    sid       = "AllowLandingObjectWrite"
+    effect    = "Allow"
+    actions   = ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
     resources = ["${aws_s3_bucket.landing.arn}/*"]
   }
 }
@@ -276,16 +315,16 @@ resource "aws_iam_user" "landing_writer_user" {
 
 data "aws_iam_policy_document" "landing_writer_user_policy" {
   statement {
-    sid     = "AllowLandingBucketListForUser"
-    effect  = "Allow"
-    actions = ["s3:ListBucket", "s3:GetBucketLocation"]
+    sid       = "AllowLandingBucketListForUser"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket", "s3:GetBucketLocation"]
     resources = [aws_s3_bucket.landing.arn]
   }
 
   statement {
-    sid     = "AllowLandingObjectWriteForUser"
-    effect  = "Allow"
-    actions = ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
+    sid       = "AllowLandingObjectWriteForUser"
+    effect    = "Allow"
+    actions   = ["s3:PutObject", "s3:GetObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
     resources = ["${aws_s3_bucket.landing.arn}/*"]
   }
 }

@@ -8,6 +8,17 @@ variable "environment" {
   description = "Environment name, for example dev or prod"
 }
 
+variable "storage_mode" {
+  type        = string
+  default     = "managed"
+  description = "Data lake storage architecture: 'managed' creates only the landing bucket and lets Unity Catalog manage bronze/silver/gold storage; 'external' creates landing/bronze/silver/gold/metadata S3 buckets with UC external locations."
+
+  validation {
+    condition     = contains(["external", "managed"], var.storage_mode)
+    error_message = "storage_mode must be either \"external\" or \"managed\"."
+  }
+}
+
 variable "aws_region" {
   type        = string
   description = "AWS region"

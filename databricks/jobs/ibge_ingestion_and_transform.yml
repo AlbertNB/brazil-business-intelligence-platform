@@ -13,6 +13,8 @@ resources:
               - "*"
               - --multiline
               - "true"
+              - --storage_mode
+              - ${var.STORAGE_MODE}
               - --landing_root
               - ${var.LANDING_ROOT}
               - --autoloader_root
