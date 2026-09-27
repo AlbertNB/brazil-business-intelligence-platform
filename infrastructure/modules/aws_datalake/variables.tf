@@ -9,3 +9,8 @@ variable "environment" {
 variable "aws_region" {
   type = string
 }
+
+variable "storage_mode" {
+  type    = string
+  default = "managed"
+}

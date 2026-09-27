@@ -2,11 +2,27 @@
 
 This folder provisions AWS data lake resources and Databricks Unity Catalog resources with Terraform.
 
+## storage_mode: managed vs external
+
+The `storage_mode` variable controls the data lake architecture:
+
+- `managed` (default): only the landing bucket is created in AWS. Bronze, silver and gold live as Unity Catalog **managed tables**, using the metastore's default managed storage instead of a bucket this project owns. There is no metadata bucket; Auto Loader schema/checkpoint state lives in a UC managed volume (`/Volumes/<catalog>/bronze/autoloader`) instead.
+- `external`: the original architecture. Landing, bronze, silver, gold and metadata are each a dedicated S3 bucket, wired into Unity Catalog as external locations, with the catalog/schemas rooted at those buckets.
+
+Switching `storage_mode` on an **existing** deployment is a destructive migration, not a toggle:
+- Bronze/silver/gold/metadata buckets are destroyed (`external` -> `managed`) or created fresh (`managed` -> `external`).
+- The Unity Catalog `storage_root` on the catalog changes, which the Databricks provider treats as a forcing change — the catalog (and everything under it: schemas, tables, grants) gets destroyed and recreated.
+- Nothing here migrates existing data between the two storage backends. After switching, rerun the Auto Loader ingestion job (against the corresponding `bronze_ingestion*.py` script, see `databricks/`) and `dbt run` to rebuild bronze/silver/gold from the landing bucket, which is unaffected by the switch.
+
+Run `terraform plan` and read the diff carefully before applying a `storage_mode` change against a real environment.
+
 ## What it creates
 
 ### AWS
-- S3 buckets: landing, bronze, silver, gold, metadata
-- Bucket protections and baseline controls:
+- S3 buckets:
+	- `managed` mode: landing only
+	- `external` mode: landing, bronze, silver, gold, metadata
+- Bucket protections and baseline controls (all created buckets):
 	- versioning
 	- SSE-S3 encryption
 	- block public access
@@ -17,7 +33,7 @@ This folder provisions AWS data lake resources and Databricks Unity Catalog reso
 	- layer = landing, bronze, silver, gold, metadata
 - Databricks role for S3 access:
 	- landing read-only
-	- bronze, silver, gold, metadata read/write
+	- `external` mode only: bronze, silver, gold, metadata read/write
 - Landing writer role and user with write access to landing
 - Secrets Manager secret container for landing writer credentials
 
@@ -25,13 +41,18 @@ This folder provisions AWS data lake resources and Databricks Unity Catalog reso
 - AWS IAM role for Unity Catalog cross-account access (with self-assume support)
 - Metastore data access
 - Storage credential
-- External locations for all buckets (landing read-only)
-- Catalog with storage root in silver
+- External locations:
+	- `managed` mode: landing only (read-only)
+	- `external` mode: all buckets (landing read-only)
+- Catalog:
+	- `managed` mode: no storage_root (UC default managed storage)
+	- `external` mode: storage root in silver
 - Schemas:
 	- bronze
 	- silver
 	- gold
-- Managed location per schema using the corresponding bucket
+- Managed location per schema using the corresponding bucket (`external` mode only)
+- `managed` mode only: a managed volume (`autoloader`) in the bronze schema for Auto Loader schema/checkpoint state
 - Grants:
 	- USE_CATALOG on the catalog
 	- USE_SCHEMA, CREATE_TABLE, CREATE_VOLUME on bronze/silver/gold schemas
@@ -61,6 +82,9 @@ The root module expects values in terraform.tfvars (or environment TF_VAR_ varia
 - catalog_name
 - storage_credential_name
 - external_location_prefix
+
+Optional:
+- storage_mode ("managed" or "external", default "managed")
 
 See terraform.tfvars.example for a template.
 

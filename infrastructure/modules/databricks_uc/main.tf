@@ -10,13 +10,19 @@ terraform {
 }
 
 locals {
-  buckets = {
-    landing  = var.landing_bucket_name
-    bronze   = var.bronze_bucket_name
-    silver   = var.silver_bucket_name
-    gold     = var.gold_bucket_name
-    metadata = var.metadata_bucket_name
-  }
+  is_external = var.storage_mode == "external"
+
+  # In managed mode only the landing bucket exists; bronze/silver/gold/metadata
+  # storage is owned by Unity Catalog instead of an explicit S3 bucket.
+  buckets = merge(
+    { landing = var.landing_bucket_name },
+    local.is_external ? {
+      bronze   = var.bronze_bucket_name
+      silver   = var.silver_bucket_name
+      gold     = var.gold_bucket_name
+      metadata = var.metadata_bucket_name
+    } : {}
+  )
   schema_layers = toset(["bronze", "silver", "gold"])
 
   uc_role_name = "${var.project_name}-${var.environment}-databricks-uc-role"
@@ -71,9 +77,9 @@ resource "aws_iam_role_policy" "databricks_uc_self_assume" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowSelfAssume"
-        Effect = "Allow"
-        Action = "sts:AssumeRole"
+        Sid      = "AllowSelfAssume"
+        Effect   = "Allow"
+        Action   = "sts:AssumeRole"
         Resource = aws_iam_role.databricks_uc_role.arn
       }
     ]
@@ -106,7 +112,7 @@ resource "aws_iam_policy" "databricks_uc_s3" {
       ],
       [
         for bucket_key, bucket_name in local.buckets : {
-          Sid    = "Objects${replace(title(bucket_name), "-", "")}" 
+          Sid    = "Objects${replace(title(bucket_name), "-", "")}"
           Effect = "Allow"
           Action = [
             "s3:GetObject",
@@ -176,9 +182,21 @@ resource "databricks_external_location" "buckets" {
 }
 
 resource "databricks_catalog" "this" {
-  name         = var.catalog_name
-  comment      = "Catalog for ${var.project_name}-${var.environment}"
-  storage_root = "${databricks_external_location.buckets["silver"].url}/"
+  name    = var.catalog_name
+  comment = "Catalog for ${var.project_name}-${var.environment}"
+  # External mode: catalog storage root points at the silver bucket.
+  # Managed mode: omit storage_root. The Unity Catalog REST API (which this
+  # provider uses) can't itself assign the metastore's Default Storage to a
+  # new catalog -- only `CREATE CATALOG` via SQL can. So in managed mode this
+  # resource is expected to be `terraform import`-ed after the catalog is
+  # created via SQL, rather than created fresh by this resource.
+  storage_root = local.is_external ? "${databricks_external_location.buckets["silver"].url}/" : null
+
+  # storage_root is immutable (changing it forces a drop + recreate). In managed
+  # mode the real value is the Default Storage path assigned by the SQL create.
+  lifecycle {
+    ignore_changes = [storage_root]
+  }
 }
 
 resource "databricks_schema" "layers" {
@@ -187,11 +205,26 @@ resource "databricks_schema" "layers" {
   catalog_name = databricks_catalog.this.name
   name         = each.value
   comment      = "${title(each.value)} layer schema for ${var.project_name}-${var.environment}"
-  storage_root = "s3://${local.buckets[each.value]}/"
+  # External mode: each schema is rooted at its own bucket.
+  # Managed mode: omit storage_root, inheriting the catalog's managed storage.
+  storage_root = local.is_external ? "s3://${local.buckets[each.value]}/" : null
 
   depends_on = [
     databricks_external_location.buckets
   ]
+}
+
+# Auto Loader needs a durable location for its schema/checkpoint state.
+# In managed mode there is no metadata bucket, so a Unity Catalog managed
+# volume inside the bronze schema takes its place.
+resource "databricks_volume" "autoloader" {
+  count = local.is_external ? 0 : 1
+
+  name         = "autoloader"
+  catalog_name = databricks_catalog.this.name
+  schema_name  = databricks_schema.layers["bronze"].name
+  volume_type  = "MANAGED"
+  comment      = "Managed volume holding Auto Loader schema/checkpoint state (managed storage_mode)."
 }
 
 resource "databricks_grants" "catalog_usage" {
@@ -204,12 +237,12 @@ resource "databricks_grants" "catalog_usage" {
 }
 
 resource "databricks_grants" "schema_usage" {
-  for_each = databricks_schema.layers
+  for_each = local.schema_layers
 
-  schema = "${databricks_catalog.this.name}.${each.value.name}"
+  schema = "${databricks_catalog.this.name}.${databricks_schema.layers[each.key].name}"
 
   grant {
-    principal  = var.databricks_principal
+    principal = var.databricks_principal
     privileges = [
       "USE_SCHEMA",
       "CREATE_TABLE",

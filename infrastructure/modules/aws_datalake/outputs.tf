@@ -3,19 +3,19 @@ output "landing_bucket_name" {
 }
 
 output "bronze_bucket_name" {
-  value = aws_s3_bucket.bronze.bucket
+  value = try(aws_s3_bucket.bronze[0].bucket, null)
 }
 
 output "silver_bucket_name" {
-  value = aws_s3_bucket.silver.bucket
+  value = try(aws_s3_bucket.silver[0].bucket, null)
 }
 
 output "gold_bucket_name" {
-  value = aws_s3_bucket.gold.bucket
+  value = try(aws_s3_bucket.gold[0].bucket, null)
 }
 
 output "metadata_bucket_name" {
-  value = aws_s3_bucket.metadata.bucket
+  value = try(aws_s3_bucket.metadata[0].bucket, null)
 }
 
 output "databricks_role_arn" {

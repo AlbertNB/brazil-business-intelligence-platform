@@ -10,6 +10,11 @@ variable "aws_region" {
   type = string
 }
 
+variable "storage_mode" {
+  type    = string
+  default = "managed"
+}
+
 variable "databricks_host" {
   type      = string
   sensitive = true
