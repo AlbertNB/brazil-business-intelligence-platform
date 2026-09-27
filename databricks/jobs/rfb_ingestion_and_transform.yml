@@ -23,6 +23,8 @@ resources:
               - ";"
               - --partition_by_column
               - _reference_month
+              - --storage_mode
+              - ${var.STORAGE_MODE}
               - --landing_root
               - ${var.LANDING_ROOT}
               - --autoloader_root

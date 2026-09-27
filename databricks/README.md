@@ -57,7 +57,7 @@ databricks bundle run -t prod <job_name>
 
 ## How It Works
 
-The `bronze_ingestion.py` script uses Databricks Auto Loader (`cloudFiles`) to incrementally ingest files from the landing zone into Delta Bronze tables under Unity Catalog. It supports JSON (IBGE streams) and CSV with custom encoding and delimiter (RFB streams).
+The `bronze_ingestion.py` script uses Databricks Auto Loader (`cloudFiles`) to incrementally ingest files from the landing zone into Delta Bronze tables under Unity Catalog. It supports JSON (IBGE streams) and CSV with custom encoding and delimiter (RFB streams), and a `--storage_mode` flag switches between writing to an explicit external S3 path or letting Unity Catalog manage table storage.
 
 For each stream (subfolder) discovered under `{LANDING_ROOT}/{source}/`, it:
 1. Reads new JSON files using `trigger(availableNow=True)`
